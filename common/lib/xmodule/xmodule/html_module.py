@@ -20,6 +20,7 @@ from xmodule.x_module import XModule, DEPRECATION_VSCOMPAT_EVENT
 from xmodule.xml_module import XmlDescriptor, name_to_pathname
 from xblock.core import XBlock
 from xblock.fields import Scope, String, Boolean, List
+from xmodule.mixin import LicenseMixin
 
 log = logging.getLogger("edx.courseware")
 
@@ -93,7 +94,7 @@ class HtmlModule(HtmlModuleMixin):
     pass
 
 
-class HtmlDescriptor(HtmlFields, XmlDescriptor, EditingDescriptor):
+class HtmlDescriptor(HtmlFields, XmlDescriptor, EditingDescriptor, LicenseMixin):  # pylint: disable=abstract-method
     """
     Module for putting raw html in a course
     """
