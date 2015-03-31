@@ -856,7 +856,7 @@ class CourseModule(CourseFields, SequenceModule):  # pylint: disable=abstract-me
     """
 
 
-class CourseDescriptor(CourseFields, SequenceDescriptor, LicenseMixin):
+class CourseDescriptor(CourseFields, LicenseMixin, SequenceDescriptor):
     """
     The descriptor for the course XModule
     """
