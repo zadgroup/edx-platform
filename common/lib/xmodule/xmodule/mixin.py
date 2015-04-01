@@ -24,5 +24,16 @@ class LicenseMixin(XBlockMixin):
         display_name=_("License"),
         help=_("A license defines how the contents of this block can be shared and reused."),
         default=None,
-        scope=Scope.settings
+        scope=Scope.content,
     )
+
+    @classmethod
+    def parse_license_from_xml(cls, definition, node):
+        license = node.get('license', default=None)
+        if license:
+            definition['license'] = license
+        return definition
+
+    def add_license_to_xml(self, node):
+        if getattr(self, "license", None):
+            node.set('license', self.license)

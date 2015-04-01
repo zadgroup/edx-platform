@@ -486,6 +486,9 @@ class VideoDescriptor(VideoFields, VideoTranscriptsMixin, VideoStudioViewHandler
             except edxval_api.ValVideoNotFoundError:
                 pass
 
+        # handle license specifically
+        self.add_license_to_xml(xml)
+
         return xml
 
     def get_context(self):
@@ -644,6 +647,9 @@ class VideoDescriptor(VideoFields, VideoTranscriptsMixin, VideoStudioViewHandler
                 field_data['edx_video_id'],
                 course_id=getattr(id_generator, 'target_course_id', None)
             )
+
+        # load license if it exists
+        field_data = LicenseMixin.parse_license_from_xml(field_data, xml)
 
         return field_data
 

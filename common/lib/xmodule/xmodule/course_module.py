@@ -990,9 +990,11 @@ class CourseDescriptor(CourseFields, LicenseMixin, SequenceDescriptor):
             xml_object.remove(wiki_tag)
 
         definition, children = super(CourseDescriptor, cls).definition_from_xml(xml_object, system)
-
         definition['textbooks'] = textbooks
         definition['wiki_slug'] = wiki_slug
+
+        # load license if it exists
+        definition = LicenseMixin.parse_license_from_xml(definition, xml_object)
 
         return definition, children
 
@@ -1011,6 +1013,9 @@ class CourseDescriptor(CourseFields, LicenseMixin, SequenceDescriptor):
             wiki_xml_object = etree.Element('wiki')
             wiki_xml_object.set('slug', self.wiki_slug)
             xml_object.append(wiki_xml_object)
+
+        # handle license specifically
+        self.add_license_to_xml(xml_object)
 
         return xml_object
 
