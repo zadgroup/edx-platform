@@ -631,8 +631,9 @@ class CapaMixin(CapaFields):
         show_hint_button = len(demand_hints) > 0
         demand_hint = None  # if set to something, will show up in UI
         if hint_index is None:
-            hint_index = 0  # bootstrap case, the client will start at 0
+            hint_index = 0  # seed the client with 0 = the hint they will ask for
         elif len(demand_hints) > 0:
+            # Requested to show hint_index
             _ = self.runtime.service(self, "i18n").ugettext  # pylint: disable=redefined-outer-name
             hint_element = demand_hints[hint_index]
             if len(demand_hints) == 1:
@@ -642,7 +643,17 @@ class CapaMixin(CapaFields):
                 prefix = _('Hint ({hint_num} of {hints_count}): ').format(hint_num=hint_index + 1,
                                                                           hints_count=len(demand_hints))
             demand_hint = prefix + hint_element.text.strip()
-            hint_index = (hint_index + 1) % len(demand_hints)
+
+            # Log this demand-hint request
+            event_info = dict()
+            event_info['problem_id'] = self.location.to_deprecated_string()
+            event_info['hint_index'] = hint_index
+            event_info['hint_len'] = len(demand_hints)
+            event_info['hint_prefix'] = prefix
+            event_info['hint_text'] = hint_element.text.strip()
+            self.runtime.track_function('get_demand_hint', event_info)
+
+            hint_index = (hint_index + 1) % len(demand_hints)  # *next* hint index for client
 
         context = {
             'problem': content,
