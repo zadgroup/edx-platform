@@ -81,7 +81,7 @@ class UserStateCache(object):
         self.course_id = course_id
 
     def cache_key_for_field_object(self, field_object):
-        return (Scope.user_state, field_object.module_state_key.map_into_course(self.course_id))
+        return field_object.module_state_key.map_into_course(self.course_id)
 
 
 class UserStateSummaryCache(object):
@@ -96,7 +96,7 @@ class UserStateSummaryCache(object):
         self.course_id = course_id
 
     def cache_key_for_field_object(self, field_object):
-        return (Scope.user_state_summary, field_object.usage_id.map_into_course(self.course_id), field_object.field_name)
+        return (field_object.usage_id.map_into_course(self.course_id), field_object.field_name)
 
 
 class PreferencesCache(object):
@@ -111,7 +111,7 @@ class PreferencesCache(object):
         )
 
     def cache_key_for_field_object(self, field_object):
-        return (Scope.preferences, field_object.module_type, field_object.field_name)
+        return (field_object.module_type, field_object.field_name)
 
 
 class UserInfoCache(object):
@@ -124,7 +124,7 @@ class UserInfoCache(object):
         )
 
     def cache_key_for_field_object(self, field_object):
-        return (Scope.user_info, field_object.field_name)
+        return field_object.field_name
 
 
 class FieldDataCache(object):
@@ -146,7 +146,12 @@ class FieldDataCache(object):
         select_for_update: True if rows should be locked until end of transaction
         asides: The list of aside types to load, or None to prefetch no asides.
         '''
-        self.cache = {}
+        self.cache = {
+            Scope.user_state: {},
+            Scope.user_info: {},
+            Scope.preferences: {},
+            Scope.user_state_summary: {},
+        }
         self.select_for_update = select_for_update
 
         if asides is None:
@@ -289,7 +294,7 @@ class FieldDataCache(object):
             return
 
         for field_object in cache._data:
-            self.cache[cache.cache_key_for_field_object(field_object)] = field_object
+            self.cache[scope][cache.cache_key_for_field_object(field_object)] = field_object
 
     def _fields_to_cache(self, descriptors):
         """
@@ -306,13 +311,13 @@ class FieldDataCache(object):
         Return the key used in the FieldDataCache for the specified KeyValueStore key
         """
         if key.scope == Scope.user_state:
-            return (key.scope, key.block_scope_id)
+            return key.block_scope_id
         elif key.scope == Scope.user_state_summary:
-            return (key.scope, key.block_scope_id, key.field_name)
+            return (key.block_scope_id, key.field_name)
         elif key.scope == Scope.preferences:
-            return (key.scope, BlockTypeKeyV1(key.block_family, key.block_scope_id), key.field_name)
+            return (BlockTypeKeyV1(key.block_family, key.block_scope_id), key.field_name)
         elif key.scope == Scope.user_info:
-            return (key.scope, key.field_name)
+            return key.field_name
 
     def find(self, key):
         '''
@@ -327,7 +332,7 @@ class FieldDataCache(object):
             # user we were constructed for.
             assert key.user_id == self.user.id
 
-        return self.cache.get(self._cache_key_from_kvs_key(key))
+        return self.cache[key.scope].get(self._cache_key_from_kvs_key(key))
 
     def find_or_create(self, key):
         '''
@@ -367,7 +372,7 @@ class FieldDataCache(object):
             )
 
         cache_key = self._cache_key_from_kvs_key(key)
-        self.cache[cache_key] = field_object
+        self.cache[key.scope][cache_key] = field_object
         return field_object
 
 
