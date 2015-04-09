@@ -3,6 +3,7 @@ Classes to provide the LMS runtime data storage to XBlocks
 """
 
 import json
+from abc import abstractmethod, ABCMeta
 from collections import defaultdict
 from itertools import chain
 from .models import (
@@ -98,15 +99,50 @@ def _all_block_types(descriptors, aside_types):
     return block_types
 
 
-class UserStateCache(object):
-    def __init__(self, user, course_id, select_for_update=False):
-        self.course_id = course_id
+class DjangoOrmFieldCache(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
         self._cache = {}
+
+    def cache_fields(self, fields, descriptors, aside_types):
+        for field_object in self._read_objects(fields, descriptors, aside_types):
+            self._cache[self._cache_key_for_field_object(field_object)] = field_object
+
+    def get(self, cache_key):
+        return self._cache.get(cache_key)
+
+    def set(self, cache_key, value):
+        self._cache[cache_key] = value
+
+    def __len__(self):
+        return len(self._cache)
+
+    @abstractmethod
+    def _read_objects(self, fields, descriptors, aside_types):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _cache_key_for_field_object(self, field_object):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _cache_key_for_kvs_key(self, key):
+        """
+        Return the key used in the FieldDataCache for the specified KeyValueStore key
+        """
+        raise NotImplementedError()
+
+
+class UserStateCache(DjangoOrmFieldCache):
+    def __init__(self, user, course_id, select_for_update=False):
+        super(UserStateCache, self).__init__()
+        self.course_id = course_id
         self.user = user
         self.select_for_update = select_for_update
 
-    def cache_fields(self, fields, descriptors, aside_types):
-        data = _chunked_query(
+    def _read_objects(self, fields, descriptors, aside_types):
+        return _chunked_query(
             StudentModule,
             self.select_for_update,
             'module_state_key__in',
@@ -114,59 +150,38 @@ class UserStateCache(object):
             course_id=self.course_id,
             student=self.user.pk,
         )
-        for field_object in data:
-            self._cache[self.cache_key_for_field_object(field_object)] = field_object
 
-    def cache_key_for_field_object(self, field_object):
+    def _cache_key_for_field_object(self, field_object):
         return field_object.module_state_key.map_into_course(self.course_id)
 
-    def get(self, cache_key):
-        return self._cache.get(cache_key)
 
-    def set(self, cache_key, value):
-        self._cache[cache_key] = value
-
-    def __len__(self):
-        return len(self._cache)
-
-class UserStateSummaryCache(object):
+class UserStateSummaryCache(DjangoOrmFieldCache):
     def __init__(self, course_id, select_for_update=False):
+        super(UserStateSummaryCache, self).__init__()
         self.course_id = course_id
-        self._cache = {}
         self.select_for_update = select_for_update
 
-    def cache_fields(self, fields, descriptors, aside_types):
-        data = _chunked_query(
+    def _read_objects(self, fields, descriptors, aside_types):
+        return _chunked_query(
             XModuleUserStateSummaryField,
             self.select_for_update,
             'usage_id__in',
             _all_usage_keys(descriptors, aside_types),
             field_name__in=set(field.name for field in fields),
         )
-        for field_object in data:
-            self._cache[self.cache_key_for_field_object(field_object)] = field_object
 
-    def cache_key_for_field_object(self, field_object):
+    def _cache_key_for_field_object(self, field_object):
         return (field_object.usage_id.map_into_course(self.course_id), field_object.field_name)
 
-    def get(self, cache_key):
-        return self._cache.get(cache_key)
 
-    def set(self, cache_key, value):
-        self._cache[cache_key] = value
-
-    def __len__(self):
-        return len(self._cache)
-
-
-class PreferencesCache(object):
+class PreferencesCache(DjangoOrmFieldCache):
     def __init__(self, user, select_for_update=False):
+        super(PreferencesCache, self).__init__()
         self.user = user
         self.select_for_update = select_for_update
-        self._cache = {}
 
-    def cache_fields(self, fields, descriptors, aside_types):
-        data = _chunked_query(
+    def _read_objects(self, fields, descriptors, aside_types):
+        return _chunked_query(
             XModuleStudentPrefsField,
             self.select_for_update,
             'module_type__in',
@@ -174,49 +189,28 @@ class PreferencesCache(object):
             self.user.pk,
             field_name__in=set(field.name for field in fields),
         )
-        for field_object in data:
-            self._cache[self.cache_key_for_field_object(field_object)] = field_object
 
-    def cache_key_for_field_object(self, field_object):
+    def _cache_key_for_field_object(self, field_object):
         return (field_object.module_type, field_object.field_name)
 
-    def get(self, cache_key):
-        return self._cache.get(cache_key)
 
-    def set(self, cache_key, value):
-        self._cache[cache_key] = value
-
-    def __len__(self):
-        return len(self._cache)
-
-
-class UserInfoCache(object):
+class UserInfoCache(DjangoOrmFieldCache):
     def __init__(self, user, select_for_update=False):
-        self._cache = {}
+        super(UserInfoCache, self).__init__()
         self.user = user
         self.select_for_update = select_for_update
 
-    def cache_fields(self, fields, descriptors, aside_types):
-        data = _query(
+    def _read_objects(self, fields, descriptors, aside_types):
+        return _query(
             XModuleStudentInfoField,
             self.select_for_update,
             student=self.user.pk,
             field_name__in=set(field.name for field in fields),
         )
-        for field_object in data:
-            self._cache[self.cache_key_for_field_object(field_object)] = field_object
 
-    def cache_key_for_field_object(self, field_object):
+    def _cache_key_for_field_object(self, field_object):
         return field_object.field_name
 
-    def get(self, cache_key):
-        return self._cache.get(cache_key)
-
-    def set(self, cache_key, value):
-        self._cache[cache_key] = value
-
-    def __len__(self):
-        return len(self._cache)
 
 
 class FieldDataCache(object):
