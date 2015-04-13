@@ -78,14 +78,24 @@
                                         <p>
                                             <div class="wrapper-copy-inline">
                                                 <div class="copy-inline">
+                                                    ## This is not ideal.  We need to include a course-specific override
+                                                    ## for this section that can be extracted by our i18n pipeline.
+                                                    ## Since the text needs to be internationalized, we can't store it
+                                                    ## in the database or in configuration.
+                                                    ## JIRA ticket to remove this once the enrollment period has ended: ECOM-1416
+                                                    % if course_key.org == "edX" and course_key.course == "GFADemo":
+                                                    <h4>${_("Lorem ipsum dolor sit amet")}</h4>
+                                                    <p>${_("Praesent at ante nunc. Nulla convallis nibh nec euismod lobortis. Sed at arcu venenatis, scelerisque tortor ac, vulputate odio. In scelerisque nisi eu orci tristique tristique. Nam non tellus ut orci venenatis pellentesque quis id erat. Nullam pharetra ante eu diam sollicitudin lacinia. Curabitur faucibus odio quis nibh condimentum ullamcorper. Fusce lectus arcu, tristique a eros laoreet, convallis pellentesque nibh. Nunc porta tortor eu leo egestas laoreet. Pellentesque ultricies metus quis nulla volutpat, vel pretium diam commodo.")}</p>
+                                                    % else:
                                                     <h4>
-                                                        ${_("Benefits of a verified Certificate")}
+                                                        ${_("Benefits of a Verified Certificate")}
                                                     </h4>
                                                     <ul>
                                                         <li><b>${_("Official")}: </b>${_("Receive an instructor-signed certificate with the institution's logo")}</li>
                                                         <li><b>${_("Easily sharable")}: </b>${_("Add the certificate to your CV or resume, or post it directly on LinkedIn")}</li>
                                                         <li><b>${_("Motivating")}: </b>${_("Give yourself an additional incentive to complete the course")}</li>
                                                     </ul>
+                                                    % endif
                                                 </div>
                                                 <div class="copy-inline list-actions">
                                                     <ul class="list-actions">

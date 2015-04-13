@@ -131,6 +131,16 @@ class CourseModeViewTest(UrlResetMixin, ModuleStoreTestCase):
         # TODO: Fix it so that response.templates works w/ mako templates, and then assert
         # that the right template rendered
 
+    # This is a temporary change that will be cleaned up when this specific
+    # course ends.  The ticket for the cleanup work is: ECOM-1416
+    def test_course_specific_copy_override(self):
+        course = CourseFactory.create(org="edX", number="GFADemo", run="3T2015")
+        CourseModeFactory(mode_slug="verified", course_id=course.id, min_price=1)
+
+        url = reverse('course_modes_choose', args=[unicode(course.id)])
+        response = self.client.get(url)
+        self.assertContains(response, "Lorem ipsum")  # TODO
+
     @ddt.data('professional', 'no-id-professional')
     def test_professional_enrollment(self, mode):
         # The only course mode is professional ed
