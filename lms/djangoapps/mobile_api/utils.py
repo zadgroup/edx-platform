@@ -3,16 +3,20 @@ Common utility methods and decorators for Mobile APIs.
 """
 
 import functools
-from rest_framework import permissions
-from opaque_keys.edx.keys import CourseKey
-from xmodule.modulestore.django import modulestore
+
+from django.http import Http404
+
+from rest_framework import permissions, status, response
 
 from courseware.courses import get_course_with_access
+from opaque_keys.edx.keys import CourseKey
+from openedx.core.lib.api.permissions import IsUserInUrl
 from openedx.core.lib.api.authentication import (
     SessionAuthenticationAllowInactiveUser,
     OAuth2AuthenticationAllowInactiveUser,
 )
-from openedx.core.lib.api.permissions import IsUserInUrl
+from util.milestones_helpers import any_unfulfilled_milestones
+from xmodule.modulestore.django import modulestore
 
 
 def mobile_course_access(depth=0, verify_enrolled=True):
@@ -30,12 +34,22 @@ def mobile_course_access(depth=0, verify_enrolled=True):
             """
             course_id = CourseKey.from_string(kwargs.pop('course_id'))
             with modulestore().bulk_operations(course_id):
-                course = get_course_with_access(
-                    request.user,
-                    'load_mobile' if verify_enrolled else 'load_mobile_no_enrollment_check',
-                    course_id,
-                    depth=depth
-                )
+                try:
+                    course = get_course_with_access(
+                        request.user,
+                        'load_mobile' if verify_enrolled else 'load_mobile_no_enrollment_check',
+                        course_id,
+                        depth=depth
+                    )
+                except Http404 as error:
+                    if any_unfulfilled_milestones(course_id, request.user.id):
+                        error.message = {
+                            "developer_message": "Cannot access content with unfulfilled pre-requisites or unpassed entrance exam."  # pylint: disable=line-too-long
+                        }
+                    return response.Response(
+                        data=error.message,
+                        status=status.HTTP_404_NOT_FOUND
+                    )
                 return func(self, request, course=course, *args, **kwargs)
         return _wrapper
     return _decorator

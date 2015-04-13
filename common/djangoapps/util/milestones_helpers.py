@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 
 from opaque_keys import InvalidKeyError
-from opaque_keys.edx.keys import CourseKey, UsageKey
+from opaque_keys.edx.keys import CourseKey
 from xmodule.modulestore.django import modulestore
 
 NAMESPACE_CHOICES = {
@@ -26,7 +26,7 @@ def add_prerequisite_course(course_key, prerequisite_course_key):
     """
     It would create a milestone, then it would set newly created
     milestones as requirement for course referred by `course_key`
-    and it would set newly created milestone as fulfilment
+    and it would set newly created milestone as fulfillment
     milestone for course referred by `prerequisite_course_key`.
     """
     if not settings.FEATURES.get('ENABLE_PREREQUISITE_COURSES', False):
@@ -171,6 +171,7 @@ def get_required_content(course, user):
                 unicode(course.id),
                 serialize_user(user)
             )
+        # Exception when milestone is not found
         except InvalidMilestoneRelationshipTypeException:
             return required_content
 
@@ -311,6 +312,18 @@ def remove_content_references(content_id):
         return None
     from milestones import api as milestones_api
     return milestones_api.remove_content_references(content_id)
+
+
+def any_unfulfilled_milestones(course_id, user_id):
+    """ Returns a boolean if user has any unfulfilled milestones """
+    from milestones.exceptions import InvalidMilestoneRelationshipTypeException
+    try:
+        return bool(
+            get_course_milestones_fulfillment_paths(course_id, {"id": user_id})
+        )
+    # Exception when milestone is not found
+    except InvalidMilestoneRelationshipTypeException:
+        return False
 
 
 def get_course_milestones_fulfillment_paths(course_id, user_id):
