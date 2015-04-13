@@ -14,13 +14,13 @@
   <div class="action">
     <input type="hidden" name="problem_id" value="${ problem['name'] }" />
     % if show_demand_hint:
-    <div class="problem_hint" aria-live="polite">${demand_hint}</div>
+    <div class="problem-hint" aria-live="polite">${demand_hint}</div>
     % endif
     % if check_button:
     <button class="check ${ check_button }" data-checking="${ check_button_checking }" data-value="${ check_button }"><span class="check-label">${ check_button }</span><span class="sr"> ${_("your answer")}</span></button>
     % endif
     % if show_hint_button:
-    <button class="hint_button" data-value="${_('Hint')}" next_hint_index="${ next_hint_index }">${_('Hint')}</button>
+    <button class="hint-button" data-value="${_('Hint')}" next_hint_index="${ next_hint_index }">${_('Hint')}</button>
     % endif
     % if reset_button:
     <button class="reset" data-value="${_('Reset')}">${_('Reset')}<span class="sr"> ${_("your answer")}</span></button>

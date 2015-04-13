@@ -33,7 +33,7 @@ class @Problem
     @checkButtonCheckingText = @checkButton.data('checking')
     @checkButton.click @check_fd
 
-    @$('div.action button.hint_button').click @hint_button
+    @$('div.action button.hint-button').click @hint_button
     @$('div.action button.reset').click @reset
     @$('div.action button.show').click @show
     @$('div.action button.save').click @save
@@ -709,7 +709,7 @@ class @Problem
       for pAttribute in problemElement.attributes
         if pAttribute.name == 'id'
           if pAttribute.value == problemId
-            hintButtonElements = problemElement.getElementsByClassName("hint_button")
+            hintButtonElements = problemElement.getElementsByClassName("hint-button")
             for hbAttribute in hintButtonElements[0].attributes
               if hbAttribute.name == 'next_hint_index'
                 next_hint_index = hbAttribute.value
@@ -718,4 +718,4 @@ class @Problem
 
     $.postWithPrefix "#{@url}/hint_button", next_hint_index: next_hint_index, input_id: @id,(response) =>
         @render(response.contents)
-        @$(".hint_button").focus()  # focus on click, like the Check button
+        @$(".hint-button").focus()  # focus on click, like the Check button

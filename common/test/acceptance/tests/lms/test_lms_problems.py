@@ -86,3 +86,52 @@ class ProblemClarificationTest(ProblemsTest):
         self.assertIn('Return on Investment', tooltip_text)
         self.assertIn('per year', tooltip_text)
         self.assertNotIn('strong', tooltip_text)
+
+
+class ProblemExtendedHintTest(ProblemsTest):
+    """
+    Test that extended hint features plumb through to the page html.
+    """
+    def get_problem(self):
+        """
+        Problem with extended hint features.
+        """
+        xml = dedent("""
+            <problem>
+            <p>question text</p>
+            <stringresponse answer="A">
+                <stringequalhint answer="B">hint</stringequalhint>
+                <textline size="20"/>
+            </stringresponse>
+            <demandhint>
+              <hint>demand-hint1</hint>
+              <hint>demand-hint2</hint>
+            </demandhint>
+            </problem>
+        """)
+        return XBlockFixtureDesc('problem', 'TITLE', data=xml)
+
+    def test_check_hint(self):
+        """
+        Test clicking Check shows the extended hint in the problem message.
+        """
+        self.courseware_page.visit()
+        problem_page = ProblemPage(self.browser)
+        self.assertEqual(problem_page.problem_text[0], u'question text')
+        problem_page.fill_answer('B')
+        problem_page.click_check()
+        self.assertEqual(problem_page.message_text, u'Incorrect: hint')
+
+    def test_demand_hint(self):
+        """
+        Test clicking hint button shows the demand hint in its div.
+        """
+        self.courseware_page.visit()
+        problem_page = ProblemPage(self.browser)
+        # The hint button rotates through multiple hints
+        problem_page.click_hint()
+        self.assertEqual(problem_page.hint_text, u'Hint (1 of 2): demand-hint1')
+        problem_page.click_hint()
+        self.assertEqual(problem_page.hint_text, u'Hint (2 of 2): demand-hint2')
+        problem_page.click_hint()
+        self.assertEqual(problem_page.hint_text, u'Hint (1 of 2): demand-hint1')

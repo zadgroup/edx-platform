@@ -61,9 +61,9 @@ CORRECTMAP_PY = None
 # Make '_' a no-op so we can scrape strings
 _ = lambda text: text
 
-QUESTION_HINT_CORRECT_STYLE = 'feedback_hint_correct'
-QUESTION_HINT_INCORRECT_STYLE = 'feedback_hint_incorrect'
-QUESTION_HINT_TEXT_STYLE = 'feedback_hint_text'
+QUESTION_HINT_CORRECT_STYLE = 'feedback-hint-correct'
+QUESTION_HINT_INCORRECT_STYLE = 'feedback-hint-incorrect'
+QUESTION_HINT_TEXT_STYLE = 'feedback-hint-text'
 
 #-----------------------------------------------------------------------------
 # Exceptions
