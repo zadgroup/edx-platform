@@ -111,7 +111,7 @@ class SystemTestSuite(NoseTestSuite):
     @property
     def cmd(self):
         cmd = (
-            './manage.py {system} test --verbosity={verbosity} '
+            './manage.py {system} --contracts test --verbosity={verbosity} '
             '{test_id} {test_opts} --traceback --settings=test {extra}'.format(
                 system=self.root,
                 verbosity=self.verbosity,
