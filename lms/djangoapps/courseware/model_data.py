@@ -453,7 +453,16 @@ class FieldDataCache(object):
         Returns: The found value
         Raises: KeyError if key isn't found in the cache
         '''
-        field_object = self.find(key)
+
+        if key.scope.user == UserScope.ONE and not self.user.is_anonymous():
+            # If we're getting user data, we expect that the key matches the
+            # user we were constructed for.
+            assert key.user_id == self.user.id
+
+        if key.scope not in self.cache:
+            raise KeyError(key.field_name)
+
+        field_object = self.cache[key.scope].get(key)
         if field_object is None:
             raise KeyError(key.field_name)
 
@@ -472,6 +481,7 @@ class FieldDataCache(object):
             kv_dict (dict): dict mapping from `DjangoKeyValueStore.Key`s to field values
         Raises: DatabaseError if any fields fail to save
         """
+
         saved_fields = []
         # field_objects maps a field_object to a list of associated fields
         field_objects = dict()
@@ -514,7 +524,16 @@ class FieldDataCache(object):
 
         Raises: KeyError if key isn't found in the cache
         """
-        field_object = self.find(key)
+
+        if key.scope.user == UserScope.ONE and not self.user.is_anonymous():
+            # If we're getting user data, we expect that the key matches the
+            # user we were constructed for.
+            assert key.user_id == self.user.id
+
+        if key.scope not in self.cache:
+            raise KeyError(key.field_name)
+
+        field_object = self.cache[key.scope].get(key)
         if field_object is None:
             raise KeyError(key.field_name)
 
@@ -536,7 +555,16 @@ class FieldDataCache(object):
 
         Returns: bool
         """
-        field_object = self.find(key)
+
+        if key.scope.user == UserScope.ONE and not self.user.is_anonymous():
+            # If we're getting user data, we expect that the key matches the
+            # user we were constructed for.
+            assert key.user_id == self.user.id
+
+        if key.scope not in self.cache:
+            return False
+
+        field_object = self.cache[key.scope].get(key)
         if field_object is None:
             return False
 
@@ -545,31 +573,21 @@ class FieldDataCache(object):
         else:
             return True
 
-
-    def find(self, key):
+    def find_or_create(self, key):
         '''
-        Look for a model data object using an DjangoKeyValueStore.Key object
-
-        key: An `DjangoKeyValueStore.Key` object selecting the object to find
-
-        returns the found object, or None if the object doesn't exist
+        Find a model data object in this cache, or create a new one if it doesn't
+        exist
         '''
+
         if key.scope.user == UserScope.ONE and not self.user.is_anonymous():
             # If we're getting user data, we expect that the key matches the
             # user we were constructed for.
             assert key.user_id == self.user.id
 
         if key.scope not in self.cache:
-            return None
+            return
 
-        return self.cache[key.scope].get(key)
-
-    def find_or_create(self, key):
-        '''
-        Find a model data object in this cache, or create it if it doesn't
-        exist
-        '''
-        field_object = self.find(key)
+        field_object = self.cache[key.scope].get(key)
 
         if field_object is not None:
             return field_object
@@ -600,9 +618,6 @@ class FieldDataCache(object):
                 field_name=key.field_name,
                 student_id=key.user_id,
             )
-
-        if key.scope not in self.cache:
-            return
 
         self.cache[key.scope].set(key, field_object)
         return field_object
