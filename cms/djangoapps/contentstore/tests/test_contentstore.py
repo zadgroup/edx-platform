@@ -1855,12 +1855,12 @@ class ContentLicenseTest(ContentStoreTestCase):
     def test_video_license_export(self):
         content_store = contentstore()
         root_dir = path(mkdtemp_clean())
-        self.video_descriptor = ItemFactory.create(
+        video_descriptor = ItemFactory.create(
             parent_location=self.course.location, category='video',
             license="all-rights-reserved"
         )
         export_course_to_xml(self.store, content_store, self.course.id, root_dir, 'test_license')
-        fname = "{block}.xml".format(block=self.video_descriptor.scope_ids.usage_id.block_id)
+        fname = "{block}.xml".format(block=video_descriptor.scope_ids.usage_id.block_id)
         video_file_path = root_dir / "test_license" / "video" / fname
         video_xml = etree.parse(video_file_path.open())
         self.assertEqual(video_xml.getroot().get("license"), "all-rights-reserved")

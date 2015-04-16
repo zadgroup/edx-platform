@@ -29,11 +29,25 @@ class LicenseMixin(XBlockMixin):
 
     @classmethod
     def parse_license_from_xml(cls, definition, node):
-        license = node.get('license', default=None)
+        """
+        When importing an XBlock from XML, this method will parse the license
+        information out of the XML and attach it to the block.
+        It is defined here so that classes that use this mixin can simply refer
+        to this method, rather than reimplementing it in their XML import
+        functions.
+        """
+        license = node.get('license', default=None)  # pylint: disable=redefined-builtin
         if license:
             definition['license'] = license
         return definition
 
     def add_license_to_xml(self, node):
+        """
+        When generating XML from an XBlock, this method will add the XBlock's
+        license to the XML representation before it is serialized.
+        It is defined here so that classes that use this mixin can simply refer
+        to this method, rather than reimplementing it in their XML export
+        functions.
+        """
         if getattr(self, "license", None):
             node.set('license', self.license)
