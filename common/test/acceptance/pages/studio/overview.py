@@ -585,7 +585,7 @@ class CourseOutlinePage(CoursePage, CourseOutlineContainer):
         return self.q(css=".license-value").first.text[0]
 
     def edit_course_start_date(self):
-        return self.q(css=".status-release .action-edit a.action-button").click()
+        self.q(css=".status-release .action-edit a.action-button").click()
         sp = SettingsPage(
             self.browser,
             self.course_info['course_org'],
@@ -593,6 +593,7 @@ class CourseOutlinePage(CoursePage, CourseOutlineContainer):
             self.course_info['course_run'],
         )
         sp.wait_for_page()
+        return sp
 
 
 class CourseOutlineModal(object):

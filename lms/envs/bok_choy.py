@@ -97,6 +97,9 @@ FEATURES['ENABLE_PREREQUISITE_COURSES'] = True
 # Enable student notes
 FEATURES['ENABLE_EDXNOTES'] = True
 
+# Enable custom content licensing
+FEATURES['LICENSING'] = True
+
 # Unfortunately, we need to use debug mode to serve staticfiles
 DEBUG = True
 

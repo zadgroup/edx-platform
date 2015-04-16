@@ -13,6 +13,7 @@ from ...pages.studio.overview import CourseOutlinePage
 from ...pages.studio.settings import SettingsPage
 from ...pages.studio.settings_advanced import AdvancedSettingsPage
 from ...pages.studio.settings_group_configurations import GroupConfigurationsPage
+from ...pages.lms.courseware import CoursewarePage
 from unittest import skip
 from textwrap import dedent
 from xmodule.partitions.partitions import Group
@@ -419,10 +420,16 @@ class ContentLicenseTest(StudioCourseTest):
             self.course_info['number'],
             self.course_info['run']
         )
+        self.lms_courseware = CoursewarePage(
+            self.browser,
+            self.course_id,
+        )
         self.outline_page.visit()
 
     def test_empty_license(self):
         self.assertEqual(self.outline_page.license, "None")
+        self.lms_courseware.visit()
+        self.assertIsNone(self.lms_courseware.course_license)
 
     def test_arr_license(self):
         self.outline_page.edit_course_start_date()
@@ -430,6 +437,8 @@ class ContentLicenseTest(StudioCourseTest):
         self.settings_page.save_changes()
         self.outline_page.visit()
         self.assertEqual(self.outline_page.license, "© All Rights Reserved")
+        self.lms_courseware.visit()
+        self.assertEqual(self.lms_courseware.course_license, "© All Rights Reserved")
 
     def test_cc_license(self):
         self.outline_page.edit_course_start_date()
@@ -437,3 +446,5 @@ class ContentLicenseTest(StudioCourseTest):
         self.settings_page.save_changes()
         self.outline_page.visit()
         self.assertEqual(self.outline_page.license, "Some Rights Reserved")
+        self.lms_courseware.visit()
+        self.assertEqual(self.lms_courseware.course_license, "Some Rights Reserved")
