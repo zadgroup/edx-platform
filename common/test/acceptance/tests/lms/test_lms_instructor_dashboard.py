@@ -23,10 +23,12 @@ class AutoEnrollmentWithCSVTest(UniqueCourseTest):
         self.course_fixture = CourseFixture(**self.course_info).install()
 
         # login as an instructor
-        AutoAuthPage(self.browser, course_id=self.course_id, staff=True).visit()
+        instructor_password = 'test'
+        AutoAuthPage(self.browser, course_id=self.course_id, staff=True, password=instructor_password).visit()
 
         # go to the membership page on the instructor dashboard
         instructor_dashboard_page = InstructorDashboardPage(self.browser, self.course_id)
+        self.get_sudo_access(instructor_dashboard_page, instructor_password)
         instructor_dashboard_page.visit()
         self.auto_enroll_section = instructor_dashboard_page.select_membership().select_auto_enroll_section()
 
@@ -113,10 +115,12 @@ class EntranceExamGradeTest(UniqueCourseTest):
         LogoutPage(self.browser).visit()
 
         # login as an instructor
-        AutoAuthPage(self.browser, course_id=self.course_id, staff=True).visit()
+        instructor_password = 'test'
+        AutoAuthPage(self.browser, course_id=self.course_id, staff=True, password=instructor_password).visit()
 
         # go to the student admin page on the instructor dashboard
         instructor_dashboard_page = InstructorDashboardPage(self.browser, self.course_id)
+        self.get_sudo_access(instructor_dashboard_page, instructor_password)
         instructor_dashboard_page.visit()
         self.student_admin_section = instructor_dashboard_page.select_student_admin()
 

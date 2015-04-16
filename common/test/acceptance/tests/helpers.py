@@ -18,6 +18,7 @@ from xmodule.partitions.tests.test_partitions import MockUserPartitionScheme
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from ..pages.common.sudo_page import SudoPage
 
 
 def skip_if_browser(browser):
@@ -390,6 +391,14 @@ class UniqueCourseTest(WebAppTest):
             deprecated=(default_store == 'draft')
         )
         return unicode(course_key)
+
+    def get_sudo_access(self, redirect_page, password):
+        """
+        Get sudo access for instructor or staff user.
+        """
+        sudo_password_page = SudoPage(self.browser, redirect_page)
+        sudo_password_page.visit()
+        sudo_password_page.submit_sudo_password_and_get_access(password)
 
 
 class YouTubeConfigError(Exception):
