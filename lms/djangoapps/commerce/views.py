@@ -2,8 +2,8 @@
 import logging
 
 from django.conf import settings
+from django.http import Http404
 from django.views.decorators.cache import cache_page
-
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from commerce.api import EcommerceAPI
 from commerce.constants import OrderStatus, Messages
-from commerce.exceptions import ApiError, InvalidConfigurationError
+from commerce.exceptions import ApiError, InvalidConfigurationError, NotFoundError
 from commerce.http import DetailResponse, InternalRequestErrorResponse
 from course_modes.models import CourseMode
 from courseware import courses
@@ -135,3 +135,25 @@ def checkout_cancel(_request):
     """ Checkout/payment cancellation view. """
     context = {'payment_support_email': microsite.get_value('payment_support_email', settings.PAYMENT_SUPPORT_EMAIL)}
     return render_to_response("commerce/checkout_cancel.html", context)
+
+
+def checkout_complete(request):
+    """
+    Checkout complete view.
+
+    This view is intended to be used as the "receipt" view displayed after a student has successfully completed payment
+    with the payment processor.
+    """
+    order_number = request.GET['order_number']
+
+    try:
+        order = EcommerceAPI().get_order(request.user, order_number)
+    except NotFoundError:
+        raise Http404
+
+    context = {
+        'order': order,
+        # 'course': course,
+    }
+
+    return render_to_response("commerce/checkout_complete.html", context)

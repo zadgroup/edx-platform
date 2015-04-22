@@ -11,7 +11,7 @@ from requests import Timeout
 
 from commerce.api import EcommerceAPI
 from commerce.constants import OrderStatus
-from commerce.exceptions import InvalidResponseError, TimeoutError, InvalidConfigurationError
+from commerce.exceptions import InvalidResponseError, TimeoutError, InvalidConfigurationError, NotFoundError
 from commerce.tests import EcommerceApiTestMixin
 from student.tests.factories import UserFactory
 
@@ -50,7 +50,7 @@ class EcommerceAPITests(EcommerceApiTestMixin, TestCase):
     @httpretty.activate
     def test_create_order(self):
         """ Verify the method makes a call to the E-Commerce API with the correct headers and data. """
-        self._mock_ecommerce_api()
+        self._mock_ecommerce_api('/orders/')
         number, status, body = self.api.create_order(self.user, self.SKU)
 
         # Validate the request sent to the E-Commerce API endpoint.
@@ -66,13 +66,13 @@ class EcommerceAPITests(EcommerceApiTestMixin, TestCase):
     @data(400, 401, 405, 406, 429, 500, 503)
     def test_create_order_with_invalid_http_status(self, status):
         """ If the E-Commerce API returns a non-200 status, the method should raise an InvalidResponseError. """
-        self._mock_ecommerce_api(status=status, body=json.dumps({'user_message': 'FAIL!'}))
+        self._mock_ecommerce_api('/orders/', status=status, body=json.dumps({'user_message': 'FAIL!'}))
         self.assertRaises(InvalidResponseError, self.api.create_order, self.user, self.SKU)
 
     @httpretty.activate
     def test_create_order_with_invalid_json(self):
         """ If the E-Commerce API returns un-parseable data, the method should raise an InvalidResponseError. """
-        self._mock_ecommerce_api(body='TOTALLY NOT JSON!')
+        self._mock_ecommerce_api('/orders/', body='TOTALLY NOT JSON!')
         self.assertRaises(InvalidResponseError, self.api.create_order, self.user, self.SKU)
 
     @httpretty.activate
@@ -83,6 +83,21 @@ class EcommerceAPITests(EcommerceApiTestMixin, TestCase):
             """ Simulates API timeout """
             raise Timeout
 
-        self._mock_ecommerce_api(body=request_callback)
+        self._mock_ecommerce_api('/orders/', body=request_callback)
 
         self.assertRaises(TimeoutError, self.api.create_order, self.user, self.SKU)
+
+    @httpretty.activate
+    def test_get_order_not_found(self):
+        """ If the E-Commerce API responds with a 404, the method should raise a NotFoundError. """
+        order_number = 'EDX-1234'
+        self._mock_ecommerce_api('/orders/{}/'.format(order_number), status=404, action=httpretty.GET)
+        self.assertRaises(NotFoundError, self.api.get_order, self.user, 'EDX-1234')
+
+    @httpretty.activate
+    def test_get_order(self):
+        """ The get_order method should return the parsed order data. """
+        order_number = 'EDX-1234'
+        _data = {'order_number': order_number}
+        self._mock_ecommerce_api('/orders/{}/'.format(order_number), body=json.dumps(_data), action=httpretty.GET)
+        self.assertEqual(self.api.get_order(self.user, order_number), _data)

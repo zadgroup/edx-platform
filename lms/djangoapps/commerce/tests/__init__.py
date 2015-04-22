@@ -35,7 +35,7 @@ class EcommerceApiTestMixin(object):
         self.assertEqual(request.body, '{{"sku": "{}"}}'.format(sku))
         self.assertEqual(request.headers['Content-Type'], 'application/json')
 
-    def _mock_ecommerce_api(self, status=200, body=None):
+    def _mock_ecommerce_api(self, path, action=httpretty.POST, status=200, body=None):
         """
         Mock calls to the E-Commerce API.
 
@@ -43,9 +43,9 @@ class EcommerceApiTestMixin(object):
         """
         self.assertTrue(httpretty.is_enabled(), 'Test is missing @httpretty.activate decorator.')
 
-        url = self.ECOMMERCE_API_URL + '/orders/'
+        url = self.ECOMMERCE_API_URL + path
         body = body or self.ECOMMERCE_API_SUCCESSFUL_BODY_JSON
-        httpretty.register_uri(httpretty.POST, url, status=status, body=body)
+        httpretty.register_uri(action, url, status=status, body=body)
 
     class mock_create_order(object):    # pylint: disable=invalid-name
         """ Mocks calls to EcommerceAPI.create_order. """

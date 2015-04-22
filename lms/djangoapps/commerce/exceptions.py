@@ -19,3 +19,8 @@ class InvalidResponseError(ApiError):
 class TimeoutError(ApiError):
     """ Exception raised when an API requests times out. """
     pass
+
+
+class NotFoundError(ApiError):
+    """ Exception raised when a resource is not found. """
+    pass
