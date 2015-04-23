@@ -113,6 +113,9 @@ class VideoEventProcessor(object):
             return
         payload = event['event']
 
+        if isinstance(payload, basestring):
+            return
+
         if 'module_id' in payload:
             module_id = payload['module_id']
             try:
