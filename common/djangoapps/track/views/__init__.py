@@ -51,7 +51,7 @@ def user_track(request):
         username = "anonymous"
 
     name = _get_request_value(request, 'event_type')
-    data = _get_request_value(request, 'event')
+    data = _get_request_value(request, 'event', '{}')
     page = _get_request_value(request, 'page')
 
     context_override = contexts.course_context_from_url(page)
