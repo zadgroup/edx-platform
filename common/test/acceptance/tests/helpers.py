@@ -362,6 +362,7 @@ class EventsTestMixin(object):
         """
         return EventPromise(
             self.event_collection,
+            self.start_time,
             check_event_func,
             description,
             **kwargs
@@ -467,7 +468,7 @@ class EventPromise(Promise):
     to create the promise before emitting any events.
     """
 
-    def __init__(self, event_collection, check_event_func, description, **kwargs):
+    def __init__(self, event_collection, start_time, check_event_func, description, **kwargs):
         super(EventPromise, self).__init__(
             check_func=self.get_event,
             description=description,
@@ -475,14 +476,14 @@ class EventPromise(Promise):
         )
         self._check_event_func = check_event_func
         self._event_collection = event_collection
-        self._from_time = datetime.utcnow()
+        self._from_time = start_time
 
     def get_event(self):
         cursor = self._event_collection.find(
             {
                 "time": {"$gte": self._from_time},
             }
-        ).sort('field', ASCENDING)
+        ).sort('time', ASCENDING)
         for event in cursor:
             if self._check_event_func(event):
                 return (True, event)
