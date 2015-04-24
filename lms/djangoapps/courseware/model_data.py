@@ -44,18 +44,7 @@ def chunks(items, chunk_size):
     return (items[i:i + chunk_size] for i in xrange(0, len(items), chunk_size))
 
 
-def _query(model_class, select_for_update, **kwargs):
-    """
-    Queries model_class with **kwargs, optionally adding select_for_update if
-    `select_for_update` is True.
-    """
-    query = model_class.objects
-    if select_for_update:
-        query = query.select_for_update()
-    query = query.filter(**kwargs)
-    return query
-
-def _chunked_query(model_class, select_for_update, chunk_field, items, chunk_size=500, **kwargs):
+def _chunked_query(model_class, chunk_field, items, chunk_size=500, **kwargs):
     """
     Queries model_class with `chunk_field` set to chunks of size `chunk_size`,
     and all other parameters from `**kwargs`.
@@ -64,7 +53,7 @@ def _chunked_query(model_class, select_for_update, chunk_field, items, chunk_siz
     that can be put into a single query.
     """
     res = chain.from_iterable(
-        _query(model_class, select_for_update, **dict([(chunk_field, chunk)] + kwargs.items()))
+        model_class.objects.filter(**dict([(chunk_field, chunk)] + kwargs.items()))
         for chunk in chunks(items, chunk_size)
     )
     return res
@@ -313,16 +302,14 @@ class DjangoOrmFieldCache(object):
 
 
 class UserStateCache(object):
-    def __init__(self, user, course_id, select_for_update=False):
+    def __init__(self, user, course_id):
         self._cache = {}
         self.course_id = course_id
         self.user = user
-        self.select_for_update = select_for_update
 
     def cache_fields(self, fields, descriptors, aside_types):
         query = _chunked_query(
             StudentModule,
-            self.select_for_update,
             'module_state_key__in',
             _all_usage_keys(descriptors, aside_types),
             course_id=self.course_id,
@@ -489,10 +476,9 @@ class UserStateCache(object):
 
 
 class UserStateSummaryCache(DjangoOrmFieldCache):
-    def __init__(self, course_id, select_for_update=False):
+    def __init__(self, course_id):
         super(UserStateSummaryCache, self).__init__()
         self.course_id = course_id
-        self.select_for_update = select_for_update
 
     def _create_object(self, kvs_key):
         field_object, __ = XModuleUserStateSummaryField.objects.get_or_create(
@@ -504,7 +490,6 @@ class UserStateSummaryCache(DjangoOrmFieldCache):
     def _read_objects(self, fields, descriptors, aside_types):
         return _chunked_query(
             XModuleUserStateSummaryField,
-            self.select_for_update,
             'usage_id__in',
             _all_usage_keys(descriptors, aside_types),
             field_name__in=set(field.name for field in fields),
@@ -521,10 +506,9 @@ class UserStateSummaryCache(DjangoOrmFieldCache):
 
 
 class PreferencesCache(DjangoOrmFieldCache):
-    def __init__(self, user, select_for_update=False):
+    def __init__(self, user):
         super(PreferencesCache, self).__init__()
         self.user = user
-        self.select_for_update = select_for_update
 
     def _create_object(self, kvs_key):
         field_object, __ = XModuleStudentPrefsField.objects.get_or_create(
@@ -537,7 +521,6 @@ class PreferencesCache(DjangoOrmFieldCache):
     def _read_objects(self, fields, descriptors, aside_types):
         return _chunked_query(
             XModuleStudentPrefsField,
-            self.select_for_update,
             'module_type__in',
             _all_block_types(descriptors, aside_types),
             self.user.pk,
@@ -555,10 +538,9 @@ class PreferencesCache(DjangoOrmFieldCache):
 
 
 class UserInfoCache(DjangoOrmFieldCache):
-    def __init__(self, user, select_for_update=False):
+    def __init__(self, user):
         super(UserInfoCache, self).__init__()
         self.user = user
-        self.select_for_update = select_for_update
 
     def _create_object(self, kvs_key):
         field_object, __ = XModuleStudentInfoField.objects.get_or_create(
@@ -568,9 +550,7 @@ class UserInfoCache(DjangoOrmFieldCache):
         return field_object
 
     def _read_objects(self, fields, descriptors, aside_types):
-        return _query(
-            XModuleStudentInfoField,
-            self.select_for_update,
+        return XModuleStudentInfoField.objects.filter(
             student=self.user.pk,
             field_name__in=set(field.name for field in fields),
         )
@@ -601,11 +581,9 @@ class FieldDataCache(object):
         descriptors: A list of XModuleDescriptors.
         course_id: The id of the current course
         user: The user for which to cache data
-        select_for_update: True if rows should be locked until end of transaction
+        select_for_update: Ignored
         asides: The list of aside types to load, or None to prefetch no asides.
         '''
-        self.select_for_update = select_for_update
-
         if asides is None:
             self.asides = []
         else:
@@ -619,19 +597,15 @@ class FieldDataCache(object):
             Scope.user_state: UserStateCache(
                 self.user,
                 self.course_id,
-                self.select_for_update,
             ),
             Scope.user_info: UserInfoCache(
                 self.user,
-                self.select_for_update,
             ),
             Scope.preferences: PreferencesCache(
                 self.user,
-                self.select_for_update,
             ),
             Scope.user_state_summary: UserStateSummaryCache(
                 self.course_id,
-                self.select_for_update,
             ),
         }
         self.add_descriptors_to_cache(descriptors)
@@ -699,7 +673,7 @@ class FieldDataCache(object):
             the supplied descriptor. If depth is None, load all descendent StudentModules
         descriptor_filter is a function that accepts a descriptor and return wether the StudentModule
             should be cached
-        select_for_update: Flag indicating whether the rows should be locked until end of transaction
+        select_for_update: Ignored
         """
         cache = FieldDataCache([], course_id, user, select_for_update, asides=asides)
         cache.add_descriptor_descendents(descriptor, depth, descriptor_filter)
