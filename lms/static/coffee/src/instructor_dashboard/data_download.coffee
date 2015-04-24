@@ -201,6 +201,15 @@ class ReportDownloads
     $table_placeholder = $ '<div/>', class: 'slickgrid'
     @$report_downloads_table.append $table_placeholder
     grid = new Slick.Grid($table_placeholder, report_downloads_data, columns, options)
+    grid.onClick.subscribe(
+        (event) =>
+            report_url = event.target.href
+            if report_url
+                # Record that the user requested to download a report
+                Logger.log('edx.instructor.report.downloaded', {
+                    report_url: report_url
+                })
+    )
     grid.autosizeColumns()
 
 
