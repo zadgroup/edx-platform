@@ -1,6 +1,7 @@
 """Helpers for tests related to emitting events to the tracking logs."""
 
 from datetime import datetime
+import json
 
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -125,6 +126,10 @@ class EventTrackingTestCase(TestCase):
 
     def _compare_trees(self, expected, actual, strict, path):
         errors = []
+
+        if not strict and path == ['event'] and isinstance(expected, dict) and isinstance(actual, basestring):
+            actual = json.loads(actual)
+
         if isinstance(expected, dict) and isinstance(actual, dict):
             expected_keys = frozenset(expected.keys())
             actual_keys = frozenset(actual.keys())
