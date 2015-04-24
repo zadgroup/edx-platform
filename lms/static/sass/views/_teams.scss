@@ -1,0 +1,51 @@
+.view-teams {
+
+  // resets for existing styles
+  div.course-wrapper section.course-content {
+    padding: 0;
+
+    p {
+      margin-bottom: ($baseline/4);
+    }
+  }
+
+  .page-header {
+    padding: $baseline $baseline ($baseline/2) $baseline;
+    border-bottom: 3px solid $blue;
+  }
+
+  .breadcrumbs {
+    @extend %t-copy-sub1;
+
+    .nav-item {
+      @include margin-right($baseline/4);
+
+      &:after {
+        @extend %t-icon9;
+        @include margin-left($baseline/2);
+        font-family: "FontAwesome";
+        color: $gray-l1;
+        content:"\f054";
+      }
+    }
+  }
+
+  .page-title {
+    @extend %t-title4;
+    margin-bottom: ($baseline/4);
+    text-transform: none;
+    color: $black;
+  }
+
+  .page-description {
+    @extend %t-copy-sub1;
+    margin-bottom: ($baseline/4);
+    color: $gray-d1;
+  }
+
+  .page-content {
+    padding: $baseline;
+  }
+
+
+}

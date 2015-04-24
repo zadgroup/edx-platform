@@ -50,3 +50,10 @@
   padding: ($baseline*1.5) $baseline;
   text-align: center;
 }
+
+// teams temporary
+.view-teams {
+  .global-new, #global-navigation {
+    display: none;
+  }
+}

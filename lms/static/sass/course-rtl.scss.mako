@@ -66,6 +66,7 @@
 @import "course/rubric";
 @import "course/open_ended_grading";
 @import "course/student-notes";
+@import "views/teams";
 
 // course - instructor-only views
 @import "course/instructor/instructor";
