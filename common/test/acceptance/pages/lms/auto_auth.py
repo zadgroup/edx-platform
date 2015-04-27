@@ -4,7 +4,7 @@ Auto-auth page (used to automatically log in during testing).
 
 import re
 import urllib
-from bok_choy.page_object import PageObject
+from bok_choy.page_object import PageObject, unguarded
 from . import AUTH_BASE_URL
 
 
@@ -14,6 +14,8 @@ class AutoAuthPage(PageObject):
     When allowed via the django settings file, visiting
     this url will create a user and log them in.
     """
+
+    CONTENT_REGEX = r'.+? user (?P<username>\S+) \((?P<email>.+?)\) with password \S+ and user_id (?P<user_id>\d+)$'
 
     def __init__(self, browser, username=None, email=None, password=None, staff=None, course_id=None, roles=None):
         """
@@ -65,14 +67,29 @@ class AutoAuthPage(PageObject):
         return url
 
     def is_browser_on_page(self):
+        return True if self.get_user_info() is not None else False
+
+    @unguarded
+    def get_user_info(self):
         message = self.q(css='BODY').text[0]
-        match = re.search(r'Logged in user ([^$]+) with password ([^$]+) and user_id ([^$]+)$', message)
-        return True if match else False
+        match = re.match(self.CONTENT_REGEX, message)
+        if not match:
+            return None
+        else:
+            user_info = match.groupdict()
+            user_info['user_id'] = int(user_info['user_id'])
+            return user_info
+
+    @property
+    def user_info(self):
+        if not hasattr(self, '_user_info'):
+            user_info = self.get_user_info()
+            if user_info is not None:
+                self._user_info = self.get_user_info()
+        return self._user_info
 
     def get_user_id(self):
         """
         Finds and returns the user_id
         """
-        message = self.q(css='BODY').text[0].strip()
-        match = re.search(r' user_id ([^$]+)$', message)
-        return match.groups()[0] if match else None
+        return self.user_info['user_id']

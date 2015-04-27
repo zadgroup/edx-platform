@@ -418,8 +418,8 @@ class EventsTestMixin(object):
                 'c': 'd'
             }
 
-            self.assert_events_equal(expected, actual, strict=False)  # This will not raise an AssertionError
-            self.assert_events_equal(expected, actual, strict=True)   # This *will* raise an AssertionError
+            self.assert_event_matches(expected, actual, strict=False)  # This will not raise an AssertionError
+            self.assert_event_matches(expected, actual, strict=True)   # This *will* raise an AssertionError
         """
 
         errors = self._compare_trees(expected, actual, strict, [])
@@ -485,6 +485,7 @@ class EventPromise(Promise):
             }
         ).sort('time', ASCENDING)
         for event in cursor:
+            del event['_id']
             if self._check_event_func(event):
                 return (True, event)
 
