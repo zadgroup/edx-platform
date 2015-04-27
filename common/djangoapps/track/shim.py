@@ -31,7 +31,10 @@ class LegacyFieldMappingProcessor(object):
             remove_shim_context(event)
 
         if 'data' in event:
-            event['event'] = event['data']
+            if context.get('event_source', '') == 'browser' and isinstance(event['data'], dict):
+                event['event'] = json.dumps(event['data'])
+            else:
+                event['event'] = event['data']
             del event['data']
         else:
             event['event'] = {}

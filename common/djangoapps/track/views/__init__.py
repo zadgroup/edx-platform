@@ -1,4 +1,5 @@
 import datetime
+import json
 
 import pytz
 
@@ -51,8 +52,11 @@ def user_track(request):
         username = "anonymous"
 
     name = _get_request_value(request, 'event_type')
-    data = _get_request_value(request, 'event', '{}')
+    data = _get_request_value(request, 'event', {})
     page = _get_request_value(request, 'page')
+
+    if isinstance(data, basestring):
+        data = json.loads(data)
 
     context_override = contexts.course_context_from_url(page)
     context_override['username'] = username
