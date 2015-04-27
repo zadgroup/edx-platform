@@ -687,13 +687,14 @@
       .controls {
         padding: ($baseline*0.75) $baseline;
         background: $m-gray-l4;
+        text-align: center;
 
         .list-controls {
           position: relative;
         }
 
         .control {
-          position: absolute;
+          // position: absolute;
 
           .action {
             @extend %btn-primary-blue;
@@ -1013,6 +1014,7 @@
     border-radius: ($baseline/10);
     background: $m-gray-l4;
     padding: ($baseline*0.75) $baseline;
+    text-align: center;
 
     .help-inline, .wizard-steps {
 
@@ -1026,9 +1028,9 @@
     }
 
     .wizard-steps {
-      @include float(right);
-      width: flex-grid(6,12);
-      @include text-align(right);
+      // @include float(right);
+      // width: flex-grid(6,12);
+      // @include text-align(right);
     }
 
     // STATE: is ready
@@ -1143,9 +1145,8 @@
 
       .help-item {
         @include fill-parent;
-
-        @include float(left);
-        @include margin-right(flex-gutter());
+        // @include float(left);
+        // @include margin-right(flex-gutter());
         margin-bottom: 25px;
 
         &:last-child {
@@ -1497,13 +1498,15 @@
     .list-reqs {
       @include clearfix();
       width: flex-grid(12,12);
+      text-align: center;
 
       .req {
         @extend %ui-window;
+        @include margin-right(flex-gutter());
+        display: inline-block;
+        vertical-align: top;
         width: flex-grid(4,12);
         min-height: ($baseline*15);
-        @include float(left);
-        @include margin-right(flex-gutter());
         border-color: $verified-color-lvl4;
         text-align: center;
 
@@ -1748,6 +1751,7 @@
     }
 
     .nav-wizard {
+      text-align: center;
 
       .prompt-verify {
         @include float(left);
