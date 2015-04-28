@@ -9,24 +9,43 @@
     }
   }
 
+  .icon {
+    font-family: "FontAwesome";
+  }
+
   .page-header {
+    @include clearfix();
     padding: $baseline $baseline ($baseline/2) $baseline;
-    border-bottom: 3px solid $blue;
+    border-bottom: 3px solid $m-blue-l1;
+  }
+
+  .header-main {
+    display: inline-block;
+    width: flex-grid(8,12);
+  }
+
+  .header-secondary {
+    display: inline-block;
+    width: flex-grid(4,12);
+    @include text-align(right);
   }
 
   .breadcrumbs {
     @extend %t-copy-sub1;
 
     .nav-item {
-      @include margin-right($baseline/4);
+      @include margin-right($baseline/2);
+      display: inline-block;
+    }
 
-      &:after {
-        @extend %t-icon9;
-        @include margin-left($baseline/2);
-        font-family: "FontAwesome";
-        color: $gray-l1;
-        content:"\f054";
-      }
+    .icon {
+      @include margin-right($baseline/4);
+      display: inline-block;
+      color: $gray-l2;
+
+      @include rtl {
+          @include transform(rotateY(180deg));
+        }
     }
   }
 
@@ -40,12 +59,37 @@
   .page-description {
     @extend %t-copy-sub1;
     margin-bottom: ($baseline/4);
-    color: $gray-d1;
+    color: $gray;
+  }
+
+  .header-search {
+
+    .search-label {
+        @extend %text-sr;
+    }
+
+    .search-field {
+        transition: all .25s ease-in-out;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        padding: ($baseline/4) ($baseline/2);
+        font-family: inherit;
+        color: $gray;
+        @include text-align(right);
+
+        &:focus {
+          border-bottom: 2px solid $black;
+          color: $black;
+        }
+    }
+
+    .icon {
+        color: $gray-l3;
+    }
+
   }
 
   .page-content {
     padding: $baseline;
   }
-
-
 }
