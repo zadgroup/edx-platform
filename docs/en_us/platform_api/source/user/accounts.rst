@@ -1,5 +1,7 @@
+.. _User Accounts API:
+
 ##################################################
-User Accounts API Module
+User Accounts API
 ##################################################
 
 This page contains information on using the User Accounts API to
