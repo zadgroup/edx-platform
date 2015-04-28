@@ -12,6 +12,8 @@ file and check it in at the same time as your model changes. To do that,
 ASSUMPTIONS: modules have unique IDs, even across different module_types
 
 """
+import itertools
+
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.db import models
@@ -23,10 +25,36 @@ from model_utils.models import TimeStampedModel
 from xmodule_django.models import CourseKeyField, LocationKeyField, BlockTypeKeyField  # pylint: disable=import-error
 
 
+def chunks(items, chunk_size):
+    """
+    Yields the values from items in chunks of size chunk_size
+    """
+    items = list(items)
+    return (items[i:i + chunk_size] for i in xrange(0, len(items), chunk_size))
+
+
+class ChunkingManager(models.Manager):
+    def chunked_filter(self, chunk_field, items, chunk_size=500, **kwargs):
+        """
+        queries model_class with `chunk_field` set to chunks of size `chunk_size`,
+        and all other parameters from `**kwargs`
+
+        this works around a limitation in sqlite3 on the number of parameters
+        that can be put into a single query
+        """
+        res = itertools.chain.from_iterable(
+            self.filter(**dict([(chunk_field, chunk)] + kwargs.items()))
+            for chunk in chunks(items, chunk_size)
+        )
+        return res
+
+
 class StudentModule(models.Model):
     """
     Keeps student state for a particular module in a particular course.
     """
+    objects = ChunkingManager()
+
     MODEL_TAGS = ['course_id', 'module_type']
 
     # For a homework problem, contains a JSON
@@ -136,6 +164,8 @@ class XBlockFieldBase(models.Model):
     """
     Base class for all XBlock field storage.
     """
+    objects = ChunkingManager()
+
     class Meta(object):  # pylint: disable=missing-docstring
         abstract = True
 
