@@ -98,12 +98,18 @@ END
     "unit")
         case "$SHARD" in
             "lms")
-                SHARD=1 paver test_system -s lms --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
+                SHARD=0 paver test_system -s lms --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
+                ;;
+            "lms-1")
+                SHARD=1 paver test_system -s lms --extra_args="--attr='shard_1' --with-flaky" --cov_args="-p" || { EXIT=1; }
+                ;;
+            "lms-2")
+                SHARD=2 paver test_system -s lms --extra_args="--attr='shard_1=False' --with-flaky" --cov_args="-p" || { EXIT=1; }
                 ;;
             "cms-js-commonlib")
-                SHARD=1 paver test_system -s cms --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
-                SHARD=1 paver test_js --coverage --skip_clean || { EXIT=1; }
-                SHARD=1 paver test_lib --skip_clean --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
+                SHARD=0 paver test_system -s cms --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
+                SHARD=0 paver test_js --coverage --skip_clean || { EXIT=1; }
+                SHARD=0 paver test_lib --skip_clean --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
                 ;;
             *)
                 paver test --extra_args="--with-flaky"
