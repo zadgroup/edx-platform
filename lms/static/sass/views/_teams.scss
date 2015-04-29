@@ -13,6 +13,7 @@
     font-family: "FontAwesome";
   }
 
+// layout
   .page-header {
     @include clearfix();
     padding: $baseline $baseline ($baseline/2) $baseline;
@@ -20,16 +21,24 @@
   }
 
   .header-main {
-    display: inline-block;
-    width: flex-grid(8,12);
+    display: block;
   }
 
-  .header-secondary {
-    display: inline-block;
-    width: flex-grid(4,12);
-    @include text-align(right);
+  .page-header.has-secondary {
+
+      .header-main {
+        display: inline-block;
+        width: flex-grid(8,12);
+      }
+
+      .header-secondary {
+        display: inline-block;
+        width: flex-grid(4,12);
+        @include text-align(right);
+      }
   }
 
+// ui bits
   .breadcrumbs {
     @extend %t-copy-sub1;
 
@@ -86,10 +95,165 @@
     .icon {
         color: $gray-l3;
     }
-
   }
 
+  .header-actions {
+  }
+
+// main content bits
   .page-content {
     padding: $baseline;
+  }
+
+  .nav-content {
+    margin-bottom: $baseline;
+    border-bottom: 2px solid $gray-l5;
+
+    .nav-item {
+        display: inline-block;
+        margin-bottom: -3px; // to match the border
+        border-bottom: 3px solid $gray-l5;
+        padding: ($baseline*.75);
+        color: $gray-d2;
+
+        &.is-active {
+            border-bottom: 3px solid $gray-d2;
+            color: $gray-d2;
+        }
+
+        &:hover {
+            border-bottom: 3px solid $link-color;
+            color: $link-color;
+        }
+    }
+  }
+
+  .intro {
+    @extend %t-weight4;
+  }
+
+  .create-team {
+
+    legend {
+        @extend %t-title6;
+        @extend %t-weight4;
+        margin-bottom: ($baseline/4);
+    }
+
+    .description {
+        @extend %t-copy-sub1;
+        color: $gray-l1;
+        margin-bottom: ($baseline/2);
+    }
+
+    .form-field {
+        margin: 0 0 ($baseline*0.75) 0;
+
+        .label {
+            display: block;
+            margin-bottom: ($baseline/4);
+
+            &.required {
+                @extend %t-weight4;
+
+                &:after {
+                  margin-left: ($baseline/4);
+                  content: "*";
+                }
+            }
+        }
+
+        .form-input {
+            @extend %t-copy-base;
+            @include transition(all $tmg-f2 ease-in-out 0s);
+            display: block;
+            width: 90%;
+            height: 100%;
+            margin-bottom: ($baseline/4);
+            border: 1px solid $gray-l2;
+            padding: ($baseline/2);
+        }
+
+        .form-select {
+            @extend %t-copy-base;
+            width: 90%;
+            margin-bottom: ($baseline/4);
+            border: 1px solid $gray-l2;
+        }
+
+        .form-input,
+        .form-select {
+
+            &:focus {
+                border: 1px solid $blue;
+
+                + .tip {
+                    color: $blue;
+                }
+            }
+        }
+
+        &.has-errors {
+
+            .form-input,
+            .form-select {
+                border: 1px solid $alert-color;
+
+                + .tip {
+                    color: $alert-color;
+                }
+            }
+        }
+
+        .tip {
+            @extend %t-copy-sub1;
+            display: block;
+            color: $gray-l1;
+        }
+    }
+
+    .form-actions {
+        margin-top: $baseline;
+    }
+
+    .action {
+      @extend %t-copy;
+      @extend %t-action2;
+      padding: ($baseline/2) $baseline;
+    }
+
+    .action-primary {
+      @extend %btn-primary-blue;
+      display: inline-block;
+      text-shadow: none;
+    }
+
+    .action-secondary {
+      display: inline-block;
+      color: $gray;
+
+      &:hover {
+          color: $link-color;
+      }
+    }
+
+    .required-wrapper {
+      display: inline-block;
+      vertical-align: top;
+      width: 60%;
+
+      legend {
+        @extend %text-sr;
+      }
+    }
+
+    .optional-wrapper {
+      display: inline-block;
+      vertical-align: top;
+      width: 35%;
+      margin-left: 2%;
+      border-left: 2px solid $gray-l4;
+      padding-left: 2%;
+    }
   }
 }

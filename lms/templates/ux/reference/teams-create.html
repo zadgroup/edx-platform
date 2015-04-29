@@ -7,9 +7,8 @@
 
 <%block name="bodyclass">in-course view-teams</%block>
 <%block name="title"><title>
-Teams | Course name
+Create New Team | [Course name]
 </title></%block>
-
 
 <%block name="header_extras">
 <header class="global slim" aria-label="Main" role="banner">
@@ -131,31 +130,67 @@ Teams | Course name
   <div class="course-wrapper">
     <section class="course-content" id="course-content">
 
-    <header class="page-header has-secondary">
+    <header class="page-header">
       <div class="header-main">
         <nav class="breadcrumbs">
-          <a class="nav-item" href="">Sustainable Energy</a> <span class="icon fa-angle-right" aria-hidden="true"></span>
-          <a  class="nav-item" href="">Sample double nest</a> <span class="icon fa-angle-right" aria-hidden="true"></span>
+          <a class="nav-item" href="">Solar Energy</a> <span class="icon fa-angle-right" aria-hidden="true"></span>
         </nav>
-        <h2 class="page-title">Solar Power</h2>
-        <p class="page-description">Teams working on projects related to Week 3 - 10 group activities</p>
-      </div>
-
-      <div class="header-secondary">
-        <div class="header-search search-teams">
-          <label for="search-teams" class="search-label">Search teams</label>
-          <input id="search-teams" class="search-field" placeholder="Search teams" />
-          <span class="icon fa-search" aria-hidden="true"></span>
-        </div>
+        <h2 class="page-title">Create a New Team</h2>
+        <p class="page-description">If you cannot find an existing team to join or would like to team up with a group of friends, create a new team.</p>
       </div>
     </header>
 
     <div class="page-content">
-      <nav class="nav-content">
-        <a href="" class="nav-item is-active">My Teams</a><a href="" class="nav-item">Browse All Teams</a>
-      </nav>
 
-    <p>Blah blah blah. Go Team!</p>
+      <form class="create-team">
+      <fieldset class="required-wrapper">
+          <legend>Required Information</legend>
+
+          <div class="form-field required">
+            <label for="team-name" class="label">Team Name (Required)</label>
+            <input id="team-name" aria-required="true" class="form-input" />
+            <span class="tip tip-input">The name that will identify your team</span>
+          </div>
+
+          <div class="form-field required has-errors">
+            <label for="team-description" class="label">Team Description (Required)</label>
+            <textarea id="team-description" aria-required="true" class="form-input"></textarea>
+            <span class="tip tip-input">A short description of the team to help other students understand the goals or directives the team is pursuing</span>
+          </div>
+        </fieldset>
+        <fieldset class="optional-wrapper">
+          <legend>Optional Characteristics</legend>
+          <p class="description">Help other students find and join your team by specifying characteristics. The more limitations you add, the fewer students may be interested in joining, so choose carefully.</p>
+          <div class="form-field">
+            <label for="team-language" class="label">Language</label>
+            <select id="team-language" name="team-language" class="form-select">
+              <option value="">Select...</option>
+              <option>Swahili</option>
+              <option>Mandarin</option>
+              <option>English</option>
+              <option>Hobbitish</option>
+            </select>
+            <span class="tip tip-input">The primary language of the team</span>
+          </div>
+          <div class="form-field">
+            <label for="team-country" class="label">Country</label>
+            <select id="team-country" name="team-country" class="form-select">
+              <option value="">Select...</option>
+              <option>Timbuktoo</option>
+              <option>The Moon</option>
+              <option>Paris</option>
+              <option>JP</option>
+            </select>
+            <span class="tip tip-input">The primary country of the team</span>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <button class="action action-primary">Create</button>
+          <a class="action action-secondary" href="">Cancel</a>
+        </div>
+      </form>
+
 
     </div>
 
