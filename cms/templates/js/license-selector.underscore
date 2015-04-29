@@ -54,13 +54,21 @@
                              <% if(optionSelected) { print("fa-check-square-o"); } else { print("fa-square-o"); } %>
                              <% if(optionDisabled) { print("is-disabled"); } %>
                              "></i>
-                        <h4 class="option-name"><%- optionInfo.name %></h4>
-                        <% if (optionSelected) { %>
-                          <span class="sr">(<%- gettext("selected") %>)</span>
-                        <% } %>
-                        <% if (optionDisabled) { %>
-                          <span class="sr">(<%- gettext("disabled") %>)</span>
-                        <% } %>
+                        <h4 class="option-name">
+                            <%- optionInfo.name %>
+                            <%
+                                var states = [];
+                                if (optionSelected) {
+                                    states.push(gettext("selected"));
+                                }
+                                if (optionDisabled) {
+                                    states.push(gettext("disabled"));
+                                }
+                                if (states) {
+                            %>
+                                <span class="sr">, <%- states.join(", ") %></span>
+                            <% } %>
+                        </h4>
                         <div class="explanation"><%- optionInfo.help %></div>
                     </li>
                 <% } // could implement other types here %>
