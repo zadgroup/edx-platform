@@ -58,6 +58,7 @@ from util.date_utils import get_default_time_display
 from eventtracking import tracker
 import analytics
 from courseware.url_helpers import get_redirect_url
+from django.contrib.auth.models import User
 
 log = logging.getLogger(__name__)
 
@@ -856,6 +857,61 @@ def submit_photos_for_verification(request):
     return HttpResponse(200)
 
 
+def _send_email(course_key, user_id, relates_assessment, photo_verification, status, is_secure):
+    try:
+        user = User.objects.get(id=user_id)
+        location_id = VerificationStatus.get_location_id(photo_verification)
+        usage_key = UsageKey.from_string(location_id)
+        course = modulestore().get_course(course_key)
+        redirect_url = get_redirect_url(course_key, usage_key.replace(course_key=course_key))
+        from_address = microsite.get_value(
+            'email_from_address',
+            settings.DEFAULT_FROM_EMAIL
+        )
+        subject = render_to_string('emails/reverification_processed_subject.txt', {})
+        # Email subject must not contain newlines
+        subject = ''.join(subject.splitlines())
+        context = {
+            "status": status,
+            "course_name": course.display_name_with_default,
+            "assessment": relates_assessment,
+            "courseware_url": redirect_url
+        }
+
+        ver_block = modulestore().get_item(usage_key)
+        allowed_attempts = ver_block.attempts
+        user_attempts = VerificationStatus.get_user_attempts(course_key, user_id, relates_assessment)
+        left_attempts = allowed_attempts - user_attempts
+        is_attempt_allowed = (allowed_attempts - user_attempts) > 0
+        current_date = datetime.datetime.now()
+        if ver_block.due:
+            verification_open = current_date <= ver_block.due
+        else:
+            verification_open = True
+        context["left_attempts"] = left_attempts
+        context["is_attempt_allowed"] = is_attempt_allowed
+        context["verification_open"] = verification_open
+        context["due_date"] = ver_block.due
+        context["is_secure"] = is_secure
+        context["site"] = microsite.get_value('SITE_NAME', 'localhost')
+
+        re_verification_link = reverse(
+            'verify_student_incourse_reverify',
+            args=(
+                unicode(course_key),
+                unicode(relates_assessment),
+                unicode(location_id)
+            )
+        )
+        context["reverify_link"] = re_verification_link
+
+        message = render_to_string('emails/reverification_processed.txt', context)
+        user.email_user(subject, message, from_address)
+
+    except Exception as exp:
+        log.error("The email for re-verification sending failed for user_id {}".format(user_id))
+
+
 @require_POST
 @csrf_exempt  # SS does its own message signing, and their API won't have a cookie value
 def results_callback(request):
@@ -937,6 +993,12 @@ def results_callback(request):
         course_enrollment = CourseEnrollment.get_or_create_enrollment(attempt.user, course_id)
         course_enrollment.emit_event(EVENT_NAME_USER_REVERIFICATION_REVIEWED_BY_SOFTWARESECURE)
     VerificationStatus.add_status_from_checkpoints(checkpoints=checkpoints, user=attempt.user, status=status)
+    # If this is re-verification then send the update email
+    if checkpoints:
+        user_id = attempt.user.id
+        course_key = checkpoints[0].course_id
+        relates_assessment = checkpoints[0].checkpoint_name
+        _send_email(course_key, user_id, relates_assessment, attempt, status, request.is_secure())
     return HttpResponse("OK!")
 
 

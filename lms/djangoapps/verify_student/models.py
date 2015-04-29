@@ -1085,6 +1085,14 @@ class VerificationStatus(models.Model):
             location_id=location_id,
             status="submitted"
         ).count()
+    
+    @classmethod
+    def get_location_id(cls, photo_verification):
+        try:
+            ver_status = cls.objects.filter(checkpoint__photo_verification=photo_verification).latest()
+            return ver_status.location_id
+        except cls.DoesNotExist:
+            return ""
 
 
 class InCourseReverificationConfiguration(ConfigurationModel):

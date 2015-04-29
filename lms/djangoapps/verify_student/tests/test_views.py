@@ -37,11 +37,11 @@ from embargo.test_utils import restrict_course
 from util.testing import UrlResetMixin
 from verify_student.views import (
     render_to_response, PayAndVerifyView, EVENT_NAME_USER_ENTERED_INCOURSE_REVERIFY_VIEW,
-    EVENT_NAME_USER_SUBMITTED_INCOURSE_REVERIFY
+    EVENT_NAME_USER_SUBMITTED_INCOURSE_REVERIFY, _send_email
 )
 from verify_student.models import (
     SoftwareSecurePhotoVerification, VerificationCheckpoint,
-    InCourseReverificationConfiguration
+    InCourseReverificationConfiguration, VerificationStatus
 )
 from reverification.tests.factories import MidcourseReverificationWindowFactory
 
@@ -1885,3 +1885,58 @@ class TestInCourseReverifyView(ModuleStoreTestCase):
                            "checkpoint_name": checkpoint,
                            "usage_id": unicode(self.reverification_location)
                        })
+
+
+class TestSendEmail(ModuleStoreTestCase):
+
+    def build_course(self):
+        """
+        Build up a course tree with a Reverificaiton xBlock.
+        """
+        # pylint: disable=attribute-defined-outside-init
+
+        self.course_key = SlashSeparatedCourseKey("Robot", "999", "Test_Course")
+        self.course = CourseFactory.create(org='Robot', number='999', display_name='Test Course')
+
+        # Create the course modes
+        for mode in ('audit', 'honor', 'verified'):
+            min_price = 0 if mode in ["honor", "audit"] else 1
+            CourseModeFactory(mode_slug=mode, course_id=self.course_key, min_price=min_price)
+
+        # Create the 'edx-reverification-block' in course tree
+        section = ItemFactory.create(parent=self.course, category='chapter', display_name='Test Section')
+        subsection = ItemFactory.create(parent=section, category='sequential', display_name='Test Subsection')
+        vertical = ItemFactory.create(parent=subsection, category='vertical', display_name='Test Unit')
+        reverification = ItemFactory.create(
+            parent=vertical,
+            category='edx-reverification-block',
+            display_name='Test Verification Block'
+        )
+        self.section_location = section.location
+        self.subsection_location = subsection.location
+        self.vertical_location = vertical.location
+        self.reverification_location = reverification.location
+
+
+    def setUp(self):
+        super(TestSendEmail, self).setUp()
+        self.build_course()
+        self.check_point1 = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name="midterm")
+
+        self.check_point1.add_verification_attempt(SoftwareSecurePhotoVerification.objects.create(user=self.user))
+
+        self.dummy_reverification_item_id_1 = self.reverification_location
+        VerificationStatus.add_verification_status(
+            checkpoint=self.check_point1,
+            user=self.user,
+            status='submitted',
+            location_id=self.dummy_reverification_item_id_1
+        )
+
+        self.attempt = SoftwareSecurePhotoVerification.objects.filter(user=self.user)
+
+    def test_approved_email(self):
+        with mock.patch('django.contrib.auth.models.User.email_user') as mock_send_mail:
+           context = _send_email(self.course.id, self.user.id, "midterm", self.attempt, "approved", True)
+
+        self.assertTrue(mock_send_mail.called)
