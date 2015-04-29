@@ -1014,7 +1014,6 @@
     border-radius: ($baseline/10);
     background: $m-gray-l4;
     padding: ($baseline*0.75) $baseline;
-    text-align: center;
 
     .help-inline, .wizard-steps {
 
@@ -1751,12 +1750,11 @@
     }
 
     .nav-wizard {
-      text-align: center;
 
       .prompt-verify {
         @include float(left);
-        width: flex-grid(6,12);
         @include margin(0, flex-gutter(), 0, 0);
+        width: flex-grid(6,12);
 
         .title {
           @extend %hd-lv4;
@@ -2322,8 +2320,8 @@
 
         .prompt-verify {
           @include float(left);
-          width: flex-grid(6,12);
           @include margin(0, flex-gutter(), 0, 0);
+          width: flex-grid(6,12);
 
           .title {
             @extend %hd-lv4;

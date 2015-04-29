@@ -32,8 +32,6 @@
         .requirements-container {
 
             .list-reqs {
-                width: 645px;
-                margin: 50px auto;
 
                 .req {
                     width: 300px;
@@ -67,7 +65,7 @@
             }
 
             .right {
-                float: right;
+                @include float(right);
                 padding: 15px 50px;
             }
 
@@ -76,10 +74,11 @@
             }
 
             .prompt-verify .title {
+                @include float(left);
+                @include text-align(left);
                 width: 600px;
                 position: relative;
                 display: inline;
-                float: left;
                 line-height: 45px;
                 color: black;
             }
