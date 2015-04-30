@@ -8,6 +8,7 @@ from django.test.testcases import TestCase
 from django.test.utils import override_settings
 import httpretty
 from requests import Timeout
+from nose.plugins.attrib import attr
 
 from commerce.api import EcommerceAPI
 from commerce.exceptions import InvalidResponseError, TimeoutError, InvalidConfigurationError
@@ -15,6 +16,7 @@ from commerce.tests import EcommerceApiTestMixin
 from student.tests.factories import UserFactory
 
 
+@attr('shard_1')
 @ddt
 @override_settings(ECOMMERCE_API_URL=EcommerceApiTestMixin.ECOMMERCE_API_URL,
                    ECOMMERCE_API_SIGNING_KEY=EcommerceApiTestMixin.ECOMMERCE_API_SIGNING_KEY)

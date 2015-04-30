@@ -2,6 +2,7 @@
 
 import json
 from uuid import uuid4
+from nose.plugins.attrib import attr
 
 from ddt import ddt, data
 from django.core.urlresolvers import reverse
@@ -19,6 +20,7 @@ from student.tests.factories import UserFactory, CourseModeFactory
 from student.tests.tests import EnrollmentEventTestMixin
 
 
+@attr('shard_1')
 @ddt
 @override_settings(ECOMMERCE_API_URL=EcommerceApiTestMixin.ECOMMERCE_API_URL,
                    ECOMMERCE_API_SIGNING_KEY=EcommerceApiTestMixin.ECOMMERCE_API_SIGNING_KEY)
