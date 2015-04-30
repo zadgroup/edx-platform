@@ -143,8 +143,11 @@
 
     <%include file="mathjax_accessible.html" />
 
+
     % if not disable_header:
-        <%include file="${header_file}" />
+         <%block name="header">
+            <%include file="${header_file}" />
+         </%block>
     % endif
 
     <div class="content-wrapper" id="content">
