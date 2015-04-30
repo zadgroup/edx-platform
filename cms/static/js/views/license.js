@@ -19,7 +19,8 @@ define(["js/views/baseview", "underscore"], function(BaseView, _) {
                     "type": "boolean",
                     "default": true,
                     "help": gettext("Allow others to copy, distribute, display and perform " +
-                        "your copyrighted work but only if they give credit the way you request."),
+                        "your copyrighted work but only if they give credit the way you request. " +
+                        "Currently, this option is required."),
                     "disabled": true,
                 },
                 "NC": {
@@ -34,7 +35,8 @@ define(["js/views/baseview", "underscore"], function(BaseView, _) {
                     "type": "boolean",
                     "default": true,
                     "help": gettext("Allow others to copy, distribute, display and perform " +
-                        "only verbatim copies of your work, not derivative works based upon it."),
+                        "only verbatim copies of your work, not derivative works based upon it. " +
+                        "This option is incompatible with \"Share Alike\"."),
                     "conflictsWith": ["SA"]
                 },
                 "SA": {
@@ -42,7 +44,8 @@ define(["js/views/baseview", "underscore"], function(BaseView, _) {
                     "type": "boolean",
                     "default": false,
                     "help": gettext("Allow others to distribute derivative works only under " +
-                        "a license identical to the license that governs your work."),
+                        "a license identical to the license that governs your work. " +
+                        "This option is incompatible with \"No Derivatives\"."),
                     "conflictsWith": ["ND"]
                 }
             },
@@ -132,6 +135,7 @@ define(["js/views/baseview", "underscore"], function(BaseView, _) {
                 // fire the change event manually.
                 this.model.trigger("change change:options")
             }
+            e.preventDefault();
         }
 
     });

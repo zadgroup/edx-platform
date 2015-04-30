@@ -215,13 +215,14 @@ ul.license-types {
   .tip {
     @extend %t-copy-sub2;
   }
-  #list-license-options {
+  ul.license-options {
     padding-bottom: 10px;
 
     li {
       line-height: 1.5;
       border-bottom: 1px solid #EEE;
       padding: ($baseline / 2) 0 ($baseline * 0.4);
+
       &.is-clickable {
         cursor: pointer;
       }
@@ -229,31 +230,13 @@ ul.license-types {
         border-bottom: none;
       }
 
-      .fa {
+      input[type=checkbox] {
         vertical-align: top;
-      }
-      .fa-square-o {
-        display: inline-block;
+        width: auto;
+        min-width: auto;
+        height: auto;
+        border: 0;
         margin: ($baseline * 0.15) 15px 0px;
-      }
-      .fa-square-o.is-disabled {
-        color: $gray;
-      }
-      .fa-check-square-o {
-        color: $blue;
-        display: none;
-        margin: ($baseline * 0.15) 14px 0px 16px;
-      }
-      .fa-check-square-o.is-disabled {
-        color: $gray;
-      }
-      &.is-selected {
-        .fa-check-square-o {
-          display: inline-block;
-        }
-        .fa-square-o {
-          display: none;
-        }
       }
       .option-name {
         @extend %t-action3;
@@ -261,6 +244,7 @@ ul.license-types {
         display: inline-block;
         width: 15%;
         vertical-align: top;
+        cursor: pointer;
       }
       .explanation {
         @extend %t-action4;
@@ -271,6 +255,10 @@ ul.license-types {
       }
     }
   }
+}
+.list-input.settings-list ul.license-options li {
+  // to make sure the padding is correctly overridden
+  padding: ($baseline / 2) 0 ($baseline * 0.4);
 }
 
 // +Form - Create New
