@@ -4,6 +4,7 @@ Tests for the certificates models.
 
 from mock import patch
 from django.conf import settings
+from nose.plugins.attrib import attr
 
 from xmodule.modulestore.tests.factories import CourseFactory
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
@@ -19,6 +20,7 @@ from util.milestones_helpers import (
 )
 
 
+@attr('shard_1')
 class CertificatesModelTest(ModuleStoreTestCase):
     """
     Tests for the GeneratedCertificate model
