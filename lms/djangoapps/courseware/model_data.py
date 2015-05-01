@@ -290,11 +290,11 @@ class UserStateCache(object):
         self._client = DjangoXBlockUserStateClient(self.user)
 
     def cache_fields(self, fields, descriptors, aside_types):
-        query = self._client.get_many(
+        block_field_state = self._client.get_many(
             self.user.username,
             _all_usage_keys(descriptors, aside_types),
         )
-        for usage_key, field_state in query:
+        for usage_key, field_state in block_field_state:
             self._cache[usage_key] = field_state
 
     @contract(kvs_key=DjangoKeyValueStore.Key)
