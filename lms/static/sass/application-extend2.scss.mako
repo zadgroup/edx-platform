@@ -43,6 +43,7 @@
 @import 'elements/typography';
 @import 'elements/controls';
 @import 'elements/system-feedback';
+@import 'elements/dropdown';
 
 // base - specific views
 @import "views/account-settings";
