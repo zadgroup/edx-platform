@@ -214,13 +214,13 @@ def _load_preview_module(request, descriptor):
     """
     student_data = KvsFieldData(SessionKeyValueStore(request))
     if _has_author_view(descriptor):
-        field_data = CmsFieldData(descriptor._field_data, student_data)  # pylint: disable=protected-access
+        wrapper = CmsFieldData.wrapper_function(student_data)
     else:
-        field_data = LmsFieldData(descriptor._field_data, student_data)  # pylint: disable=protected-access
+        wrapper = LmsFieldData.wrapper_function(student_data)
     descriptor.bind_for_student(
         _preview_module_system(request, descriptor, field_data),
-        field_data,
-        request.user.id
+        request.user.id,
+        [wrapper],
     )
     return descriptor
 

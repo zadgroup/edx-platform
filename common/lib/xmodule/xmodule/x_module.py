@@ -542,14 +542,17 @@ class XModuleMixin(XModuleFields, XBlockMixin):
         """
         return None
 
-    def bind_for_student(self, xmodule_runtime, field_data, user_id):
+    def bind_for_student(self, xmodule_runtime, user_id, wrappers=None):
         """
         Set up this XBlock to act as an XModule instead of an XModuleDescriptor.
 
         Arguments:
             xmodule_runtime (:class:`ModuleSystem'): the runtime to use when accessing student facing methods
-            field_data (:class:`FieldData`): The :class:`FieldData` to use for all subsequent data access
             user_id: The user_id to set in scope_ids
+            wrappers: These are a list functions that put a wrapper, such as
+                      LmsFieldData or OverrideFieldData, around the field_data.
+                      Note that the functions will be applied in the order in
+                      which they're listed. So [f1, f2] -> f2(f1(field_data))
         """
         # pylint: disable=attribute-defined-outside-init
 
@@ -578,7 +581,21 @@ class XModuleMixin(XModuleFields, XBlockMixin):
 
         # Set the new xmodule_runtime and field_data (which are user-specific)
         self.xmodule_runtime = xmodule_runtime
-        self._field_data = field_data
+
+        # if the descriptor doesn't have this attribute yet,
+        # set it here before we start wrapping it
+        if not hasattr(self, '_unwrapped_field_data'):
+            self._unwrapped_field_data = self._field_data
+
+        if wrappers is None:
+            wrappers = []
+
+        wrapped_field_data = self._unwrapped_field_data
+        for wrapper in wrappers:
+            wrapped_field_data = wrapper(wrapped_field_data)
+
+        self._field_data = wrapped_field_data
+
 
     @property
     def non_editable_metadata_fields(self):

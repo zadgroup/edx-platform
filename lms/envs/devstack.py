@@ -141,3 +141,11 @@ except ImportError:
 MODULESTORE = convert_module_store_setting_if_needed(MODULESTORE)
 
 SECRET_KEY = '85920908f28904ed733fe576320db18cabd7b6cd'
+
+FEATURES['INDIVIDUAL_DUE_DATES'] = True
+FIELD_OVERRIDE_PROVIDERS += ('courseware.student_field_overrides.IndividualStudentOverrideProvider',)
+
+INSTALLED_APPS += ('ccx',)
+FEATURES['CUSTOM_COURSES_EDX'] = True
+FIELD_OVERRIDE_PROVIDERS += ('ccx.overrides.CustomCoursesForEdxOverrideProvider',)
+MIDDLEWARE_CLASSES += ('ccx.overrides.CcxMiddleware',)
