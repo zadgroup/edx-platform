@@ -17,7 +17,6 @@ define(['backbone'], function(Backbone) {
 
         dispatcher.listenTo(form, 'clear', function () {
             results.clearResults();
-            form.hideClearAllButton();
         });
 
         dispatcher.listenTo(results, 'next', function () {
@@ -28,7 +27,6 @@ define(['backbone'], function(Backbone) {
         dispatcher.listenTo(collection, 'search', function () {
             if (collection.length > 0) {
                 results.render();
-                form.showClearAllButton();
             }
             else {
                 form.showNotFoundMessage(collection.searchTerm);
