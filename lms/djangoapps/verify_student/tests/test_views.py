@@ -37,7 +37,7 @@ from embargo.test_utils import restrict_course
 from util.testing import UrlResetMixin
 from verify_student.views import (
     render_to_response, PayAndVerifyView, EVENT_NAME_USER_ENTERED_INCOURSE_REVERIFY_VIEW,
-    EVENT_NAME_USER_SUBMITTED_INCOURSE_REVERIFY, _send_email
+    EVENT_NAME_USER_SUBMITTED_INCOURSE_REVERIFY, _send_email, _compose_message_reverification_email
 )
 from verify_student.models import (
     SoftwareSecurePhotoVerification, VerificationCheckpoint,
@@ -1916,12 +1916,12 @@ class TestSendEmail(ModuleStoreTestCase):
         self.subsection_location = subsection.location
         self.vertical_location = vertical.location
         self.reverification_location = reverification.location
-
+        self.assessment = "midterm"
 
     def setUp(self):
         super(TestSendEmail, self).setUp()
         self.build_course()
-        self.check_point1 = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name="midterm")
+        self.check_point1 = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name=self.assessment)
 
         self.check_point1.add_verification_attempt(SoftwareSecurePhotoVerification.objects.create(user=self.user))
 
@@ -1935,8 +1935,15 @@ class TestSendEmail(ModuleStoreTestCase):
 
         self.attempt = SoftwareSecurePhotoVerification.objects.filter(user=self.user)
 
-    def test_approved_email(self):
-        with mock.patch('django.contrib.auth.models.User.email_user') as mock_send_mail:
-           context = _send_email(self.course.id, self.user.id, "midterm", self.attempt, "approved", True)
+    def test_approved_email_message(self):
 
-        self.assertTrue(mock_send_mail.called)
+        subject, body = _compose_message_reverification_email(
+            self.course.id, self.user.id, "midterm", self.attempt, "approved", True
+        )
+
+        self.assertIn("Your verification for course {course_name} and assessment {assessment} has been passed.".format(
+            course_name=self.course.display_name_with_default,
+            assessment=self.assessment), body
+        )
+
+        self.assertIn("Re-verification Status", subject)

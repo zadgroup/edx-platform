@@ -857,20 +857,17 @@ def submit_photos_for_verification(request):
     return HttpResponse(200)
 
 
-def _send_email(course_key, user_id, relates_assessment, photo_verification, status, is_secure):
+def _compose_message_reverification_email(course_key, user_id, relates_assessment, photo_verification, status, is_secure):
     try:
-        user = User.objects.get(id=user_id)
         location_id = VerificationStatus.get_location_id(photo_verification)
         usage_key = UsageKey.from_string(location_id)
         course = modulestore().get_course(course_key)
         redirect_url = get_redirect_url(course_key, usage_key.replace(course_key=course_key))
-        from_address = microsite.get_value(
-            'email_from_address',
-            settings.DEFAULT_FROM_EMAIL
-        )
+
         subject = render_to_string('emails/reverification_processed_subject.txt', {})
         # Email subject must not contain newlines
         subject = ''.join(subject.splitlines())
+
         context = {
             "status": status,
             "course_name": course.display_name_with_default,
@@ -880,7 +877,7 @@ def _send_email(course_key, user_id, relates_assessment, photo_verification, sta
 
         ver_block = modulestore().get_item(usage_key)
         allowed_attempts = ver_block.attempts
-        user_attempts = VerificationStatus.get_user_attempts(course_key, user_id, relates_assessment)
+        user_attempts = VerificationStatus.get_user_attempts(user_id, course_key, relates_assessment, location_id)
         left_attempts = allowed_attempts - user_attempts
         is_attempt_allowed = (allowed_attempts - user_attempts) > 0
         current_date = datetime.datetime.now()
@@ -905,11 +902,20 @@ def _send_email(course_key, user_id, relates_assessment, photo_verification, sta
         )
         context["reverify_link"] = re_verification_link
 
-        message = render_to_string('emails/reverification_processed.txt', context)
-        user.email_user(subject, message, from_address)
+        return subject, render_to_string('emails/reverification_processed.txt', context)
 
     except Exception as exp:
         log.error("The email for re-verification sending failed for user_id {}".format(user_id))
+
+
+def _send_email(user_id, message, subject):
+
+    from_address = microsite.get_value(
+        'email_from_address',
+        settings.DEFAULT_FROM_EMAIL
+    )
+    user = User.objects.get(id=user_id)
+    user.email_user(subject, message, from_address)
 
 
 @require_POST
@@ -998,7 +1004,12 @@ def results_callback(request):
         user_id = attempt.user.id
         course_key = checkpoints[0].course_id
         relates_assessment = checkpoints[0].checkpoint_name
-        _send_email(course_key, user_id, relates_assessment, attempt, status, request.is_secure())
+
+        subject, message = _compose_message_reverification_email(
+            course_key, user_id, relates_assessment, attempt, status, request.is_secure()
+        )
+
+        _send_email(user_id, subject, message)
     return HttpResponse("OK!")
 
 

@@ -780,7 +780,7 @@ class VerificationStatusTest(ModuleStoreTestCase):
         self.assertEqual(VerificationStatus.get_user_attempts(
             course_key=self.course.id,
             user_id=self.user.id,
-            related_assessment='midterm'), 1)
+            related_assessment='midterm',location_id=self.dummy_reverification_item_id_1), 1)
 
 
 
