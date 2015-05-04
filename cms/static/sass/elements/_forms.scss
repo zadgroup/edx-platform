@@ -234,6 +234,7 @@ form {
         border: 0;
         margin: ($baseline*0.15) 15px 0px;
       }
+
       .option-name {
         @extend %t-action3;
         @extend %t-strong;
@@ -250,6 +251,13 @@ form {
         color: $gray;
       }
     }
+  }
+}
+.license-preview a {
+  color: $gray;
+
+  &:hover {
+    color: $ui-link-color;
   }
 }
 .list-input.settings-list ul.license-options li {

@@ -1,4 +1,4 @@
-<div class="license-wrapper">
+<div class="wrapper-license">
     <h3 class="label setting-label">
         <%= gettext("License Type") %>
     </h3>
@@ -71,7 +71,7 @@
 <% } %>
 
 <% if (showPreview) { %>
-    <div class="license-preview-wrapper">
+    <div class="wrapper-license-preview">
         <h4 class="label setting-label">
             <%= gettext("License Display") %>
         </h4>
