@@ -93,7 +93,7 @@
                     version = model.options.ver || "1.0";
              }
         %>
-            <a rel="license" href="//creativecommons.org/licenses/<%- enabled.join("-") %>/<%- version %>/">
+            <a rel="license" href="https://creativecommons.org/licenses/<%- enabled.join("-") %>/<%- version %>/">
             <% if (previewButton) { %>
                 <img src="https://licensebuttons.net/l/<%- enabled.join("-") %>/<%- version %>/<%- typeof buttonSize == "string" ? buttonSize : "88x31" %>.png"
                     alt="<%- typeof licenseString == "string" ? licenseString : "" %>"

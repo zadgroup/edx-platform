@@ -7,7 +7,7 @@ define(["js/views/baseview", "underscore"], function(BaseView, _) {
         "creative-commons": {
             "name": gettext("Creative Commons"),
             "tooltip": gettext("You waive some rights for your work, such that others can use it too"),
-            "url": "//creativecommons.org/about",
+            "url": "https://creativecommons.org/about",
             "options": {
                 "ver": {
                     "name": gettext("Version"),
