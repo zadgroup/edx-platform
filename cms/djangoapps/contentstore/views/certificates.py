@@ -172,6 +172,7 @@ class CertificateManager(object):
                 break
         return JsonResponse(status=204)
 
+    # pylint-disable: unused-variable
     @staticmethod
     def remove_signatory(request, store, course, certificate_id, signatory_id):
         """
