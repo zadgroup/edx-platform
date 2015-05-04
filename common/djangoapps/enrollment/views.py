@@ -11,6 +11,7 @@ from course_modes.models import CourseMode
 from openedx.core.djangoapps.user_api.preferences.api import update_email_opt_in
 from openedx.core.lib.api.permissions import ApiKeyHeaderPermission, ApiKeyHeaderPermissionIsAuthenticated
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
@@ -23,11 +24,14 @@ from openedx.core.lib.api.authentication import (
     OAuth2AuthenticationAllowInactiveUser,
 )
 from util.disable_rate_limit import can_disable_rate_limit
+from xmodule.modulestore.django import modulestore
+
 from enrollment import api
 from enrollment.errors import (
     CourseNotFoundError, CourseEnrollmentError,
     CourseModeNotFoundError, CourseEnrollmentExistsError
 )
+from enrollment.serializers import CourseSerializer
 from student.models import User
 
 
@@ -452,3 +456,13 @@ class EnrollmentListView(APIView, ApiKeyPermissionMixIn):
                     ).format(username=username, course_id=course_id)
                 }
             )
+
+@can_disable_rate_limit
+class CoursesListView(ApiKeyPermissionMixIn, ListAPIView):
+    authentication_classes = OAuth2AuthenticationAllowInactiveUser, SessionAuthenticationAllowInactiveUser
+    permission_classes = ApiKeyHeaderPermissionIsAuthenticated,
+    throttle_classes = (EnrollmentUserThrottle,)
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        return modulestore().get_courses()

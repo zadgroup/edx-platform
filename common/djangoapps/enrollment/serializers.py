@@ -55,6 +55,19 @@ class CourseField(serializers.RelatedField):
         }
 
 
+class CourseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    enrollment_start = serializers.DateTimeField()
+    enrollment_end = serializers.DateTimeField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    modes = serializers.SerializerMethodField(method_name='get_modes')
+
+    def get_modes(self, course):
+        modes = CourseMode.modes_for_course(course.id, only_selectable=False)
+        return [{'slug': mode.slug, 'price': mode.min_price} for mode in modes]
+
+
 class CourseEnrollmentSerializer(serializers.ModelSerializer):
     """Serializes CourseEnrollment models
 

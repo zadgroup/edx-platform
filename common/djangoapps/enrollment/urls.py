@@ -8,7 +8,8 @@ from django.conf.urls import patterns, url
 from .views import (
     EnrollmentView,
     EnrollmentListView,
-    EnrollmentCourseDetailView
+    EnrollmentCourseDetailView,
+    CoursesListView
 )
 
 USERNAME_PATTERN = '(?P<username>[\w.@+-]+)'
@@ -32,4 +33,5 @@ urlpatterns = patterns(
         EnrollmentCourseDetailView.as_view(),
         name='courseenrollmentdetails'
     ),
+    url(r'^courses/$', CoursesListView.as_view(), name='courses')
 )

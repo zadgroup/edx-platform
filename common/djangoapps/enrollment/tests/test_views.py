@@ -728,3 +728,19 @@ class EnrollmentCrossDomainTest(ModuleStoreTestCase):
             HTTP_REFERER=self.REFERER,
             HTTP_X_CSRFTOKEN=csrf_cookie
         )
+
+
+@unittest.skipUnless(settings.ROOT_URLCONF == 'lms.urls', 'Test only valid in lms')
+class CoursesListViewTests(ModuleStoreTestCase):
+    def test_single_course(self):
+        """
+        The view should return a list of courses and modes.
+        """
+        self.fail()
+
+    def test_multiple_courses(self):
+        self.fail()
+
+    def test_no_courses(self):
+        """ If no courses exist, the view should return an empty list. """
+        self.fail()
