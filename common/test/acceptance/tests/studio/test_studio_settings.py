@@ -427,11 +427,24 @@ class ContentLicenseTest(StudioCourseTest):
         self.outline_page.visit()
 
     def test_empty_license(self):
+        """
+        When I visit the Studio outline page,
+        I see that the course license is "None" by default.
+        Then I visit the LMS courseware page,
+        and I see that there is no course license displayed.
+        """
         self.assertEqual(self.outline_page.license, "None")
         self.lms_courseware.visit()
         self.assertIsNone(self.lms_courseware.course_license)
 
     def test_arr_license(self):
+        """
+        When I set the course license to "All Rights Reserved",
+        and I visit the Studio outline page,
+        I see that the course license is "All Rights Reserved".
+        Then I visit the LMS courseware page,
+        and I see that the course license is "All Rights Reserved".
+        """
         self.outline_page.edit_course_start_date()
         self.settings_page.set_course_license("all-rights-reserved")
         self.settings_page.save_changes()
@@ -441,6 +454,13 @@ class ContentLicenseTest(StudioCourseTest):
         self.assertEqual(self.lms_courseware.course_license, "© All Rights Reserved")
 
     def test_cc_license(self):
+        """
+        When I set the course license to "Creative Commons" (with default options),
+        and I visit the Studio outline page,
+        I see that the course license is "Some Rights Reserved".
+        Then I visit the LMS courseware page,
+        and I see that the course license is "Some Rights Reserved".
+        """
         self.outline_page.edit_course_start_date()
         self.settings_page.set_course_license("creative-commons")
         self.settings_page.save_changes()
