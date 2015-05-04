@@ -8,6 +8,7 @@
             <li data-license="<%- licenseType %>">
                 <button name="license-<%- licenseType %>"
                         class="action license-button <% if(model.type === licenseType) { print("is-selected"); } %>"
+                        aria-pressed="<%- (model.type === licenseType).toString() %>"
                         <% if (license.tooltip) { %>data-tooltip="<%- license.tooltip %>"<% } %>>
                     <%- license.name %>
                 </button>
