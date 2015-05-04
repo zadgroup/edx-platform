@@ -321,6 +321,7 @@
                     mode: this.mode,
                     title: this.options.title,
                     screenReaderTitle: this.options.screenReaderTitle || this.options.title,
+                    screenReaderLabel: this.options.screenReaderLabel || null,
                     iconName: this.options.iconName,
                     showBlankOption: (!this.options.required || !this.modelValueIsSet()),
                     selectOptions: this.options.options,
