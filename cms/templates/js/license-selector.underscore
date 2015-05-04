@@ -5,7 +5,7 @@
     <ul class="license-types">
         <% var link_start_tpl = '<a href="{url}" target="_blank">'; %>
         <% _.each(licenseInfo, function(license, licenseType) { %>
-            <li data-license="<%- licenseType %>">
+            <li class="license-type" data-license="<%- licenseType %>">
                 <button name="license-<%- licenseType %>"
                         class="action license-button <% if(model.type === licenseType) { print("is-selected"); } %>"
                         aria-pressed="<%- (model.type === licenseType).toString() %>"
@@ -46,7 +46,7 @@
                             (optionInfo.conflictsWith && _.any(optionInfo.conflictsWith, function(key) {return model.options[key];}));
                     %>
                     <li data-option="<%- optionKey %>"
-                        class="action-item license-button
+                        class="action-item license-option
                                <% if (optionSelected) { print("is-selected"); } %>
                                <% if (optionDisabled) { print("is-disabled"); } else { print("is-clickable"); } %>"
                     >
