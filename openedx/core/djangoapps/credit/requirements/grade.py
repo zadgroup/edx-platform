@@ -1,10 +1,11 @@
 """TODO """
 
+from . import BaseCreditRequirementChecker, register_checker
 
-class GradeCreditRequirement(object):
+
+@register_checker("grade")
+class GradeCreditRequirementChecker(BaseCreditRequirementChecker):
     """TODO """
-
-    req_type = "grade"
 
     def validate_criteria(self, criteria):
         # Check that criteria has a "min_grade" item
@@ -20,6 +21,6 @@ class GradeCreditRequirement(object):
         # Check that the user's grade is > the cutoff.
         pass
 
-    def status_description(self, criteria, user_status):
+    def status_description(self, user_status):
         # X out of Y grade
         pass

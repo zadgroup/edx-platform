@@ -1,9 +1,11 @@
+"""TODO """
+
+from . import BaseCreditRequirementChecker, register_checker
 
 
-class VerificationCreditRequirement(object):
+@register_checker("verification")
+class VerificationCreditRequirement(BaseCreditRequirementChecker):
     """TODO """
-
-    req_type = "verification"
 
     def validate_criteria(self, criteria):
         # Check that the criteria says the checkpoint name
@@ -14,10 +16,10 @@ class VerificationCreditRequirement(object):
         # for each checkpoint.
         pass
 
-    def is_satisfied(self, criteria, user_status):
+    def is_satisfied(self, user_status):
         # Check that the user has a status of "approved" for the checkpoint
         pass
 
-    def status_description(self, criteria, user_status):
+    def status_description(self, user_status):
         # String describing the checkpoint name and user's status
         pass
