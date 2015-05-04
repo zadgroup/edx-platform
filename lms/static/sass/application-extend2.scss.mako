@@ -53,6 +53,7 @@
 @import 'views/shoppingcart';
 @import 'views/homepage';
 @import 'course/auto-cert';
+@import 'views/bookmarks';
 
 // applications
 @import "discussion/utilities/variables";

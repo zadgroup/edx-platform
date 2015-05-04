@@ -50,6 +50,7 @@
 @import 'views/shoppingcart';
 @import 'views/login-register';
 @import 'views/homepage';
+@import 'views/bookmarks';
 
 // applications
 @import "discussion/utilities/variables";
