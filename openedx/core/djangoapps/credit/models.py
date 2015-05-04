@@ -10,19 +10,14 @@ class CreditProvider(models.Model):
     pass
 
 
-class CreditProviderCourse(models.Model):
-    """TODO """
-    # FK to CreditProvider (1:m)
-    # Course key
-    pass
-
-
 class CreditRequirement(models.Model):
     """TODO """
-    # credit_course (1:m)
+    # course_key
+    # provider (FK to CreditProvider)
     # requirement_type
+    # requirement_id
+    # requirement_criteria (JSON)
     # active (bool)
-    # data
     pass
 
 
@@ -34,10 +29,20 @@ class CreditRequirementStatus(models.Model):
     pass
 
 
+class CreditEligibility(models.Model):
+    """TODO """
+    # username
+    # course_key
+    # CreditProvider (FK)
+    pass
+
+
 class CreditRequest(models.Model):
     """ TODO """
     # uuid
-    # CreditProviderCourse (FK to CPC)
+    # course_key
+    # CreditProvider (FK to CP)
+    # username
     # grade
     # full_name
     # email

@@ -11,7 +11,7 @@ def get_credit_requirements(course_key):
     pass
 
 
-def satisfy_credit_requirement(course_key, username, requirement):
+def update_credit_status(course_key, username, requirements, user_state):
     """TODO """
     pass
 
