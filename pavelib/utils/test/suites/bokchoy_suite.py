@@ -35,6 +35,8 @@ class BokChoyTestSuite(TestSuite):
         self.xunit_report = self.report_dir / "xunit.xml"
         self.cache = Env.BOK_CHOY_CACHE
         self.fasttest = kwargs.get('fasttest', False)
+        self.serversonly = kwargs.get('serversonly', False)
+        self.testsonly = kwargs.get('testsonly', False)
         self.test_spec = kwargs.get('test_spec', None)
         self.default_store = kwargs.get('default_store', None)
         self.verbosity = kwargs.get('verbosity', 2)
@@ -58,6 +60,27 @@ class BokChoyTestSuite(TestSuite):
         print(msg)
         bokchoy_utils.check_services()
 
+        if not self.testsonly:
+            self.prepare_bokchoy_run()
+
+        msg = colorize('green', "Waiting for servers to start...")
+        print(msg)
+        bokchoy_utils.wait_for_test_servers()
+        if self.serversonly:
+            self.interruptable_prompt()
+
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        super(BokChoyTestSuite, self).__exit__(exc_type, exc_value, traceback)
+
+        msg = colorize('green', "Cleaning up databases...")
+        print(msg)
+
+        # Clean up data we created in the databases
+        sh("./manage.py lms --settings bok_choy flush --traceback --noinput")
+        bokchoy_utils.clear_mongo()
+
+    def prepare_bokchoy_run(self):
         sh("{}/scripts/reset-test-db.sh".format(Env.REPO_ROOT))
 
         if not self.fasttest:
@@ -94,19 +117,9 @@ class BokChoyTestSuite(TestSuite):
         print(msg)
         bokchoy_utils.start_servers(self.default_store)
 
-        msg = colorize('green', "Waiting for servers to start...")
-        print(msg)
-        bokchoy_utils.wait_for_test_servers()
+    def interruptable_prompt(self):
+        sh('read -p "Press a key to stop servers." PROMPTVAR',capture=True)
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        super(BokChoyTestSuite, self).__exit__(exc_type, exc_value, traceback)
-
-        msg = colorize('green', "Cleaning up databases...")
-        print(msg)
-
-        # Clean up data we created in the databases
-        sh("./manage.py lms --settings bok_choy flush --traceback --noinput")
-        bokchoy_utils.clear_mongo()
 
     @property
     def cmd(self):
@@ -116,19 +129,25 @@ class BokChoyTestSuite(TestSuite):
         else:
             test_spec = self.test_dir / self.test_spec
 
+        # Skip any additional commands (such as nosetests) if running in
+        # servers only mode
+        if self.serversonly:
+            return ""
+
         # Construct the nosetests command, specifying where to save
         # screenshots and XUnit XML reports
-        cmd = [
-            "DEFAULT_STORE={}".format(self.default_store),
-            "SCREENSHOT_DIR='{}'".format(self.log_dir),
-            "BOK_CHOY_HAR_DIR='{}'".format(self.har_dir),
-            "SELENIUM_DRIVER_LOG_DIR='{}'".format(self.log_dir),
-            "nosetests",
-            test_spec,
-            "--with-xunit",
-            "--xunit-file={}".format(self.xunit_report),
-            "--verbosity={}".format(self.verbosity),
-        ]
+        else:
+            cmd = [
+                "DEFAULT_STORE={}".format(self.default_store),
+                "SCREENSHOT_DIR='{}'".format(self.log_dir),
+                "BOK_CHOY_HAR_DIR='{}'".format(self.har_dir),
+                "SELENIUM_DRIVER_LOG_DIR='{}'".format(self.log_dir),
+                "nosetests",
+                test_spec,
+                "--with-xunit",
+                "--xunit-file={}".format(self.xunit_report),
+                "--verbosity={}".format(self.verbosity),
+            ]
         if self.pdb:
             cmd.append("--pdb")
         cmd.append(self.extra_args)
