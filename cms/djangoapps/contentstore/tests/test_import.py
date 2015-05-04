@@ -283,3 +283,47 @@ class ContentStoreImportTest(SignalDisconnectTestMixin, ModuleStoreTestCase):
         }
 
         self.assertEqual(remapped_verticals, split_test_module.group_id_to_child)
+
+    @ddt.data(ModuleStoreEnum.Type.mongo, ModuleStoreEnum.Type.split)
+    def test_video_components_present_while_import(self, store):
+        """
+        Test that video components with same edx_video_id are present while re-importing
+        """
+        with modulestore().default_store(store):
+            module_store = modulestore()
+            course_id = module_store.make_course_key('edX', 'test_video_modules', '2015_M4')
+
+            # Import first time
+            import_course_from_xml(
+                module_store,
+                self.user.id,
+                TEST_DATA_DIR,
+                ['test_course_video_components'],
+                target_id=course_id,
+                create_if_not_present=True
+            )
+
+            # Re-import
+            import_course_from_xml(
+                module_store,
+                self.user.id,
+                TEST_DATA_DIR,
+                ['test_course_video_components'],
+                target_id=course_id,
+                create_if_not_present=True
+            )
+
+            course = module_store.get_course(course_id)
+            course_key = course.id
+
+            self.assertIsNotNone(course)
+
+            vertical_location = course_key.make_usage_key('vertical', '98011c11106f447e8869f324f8322e4a')
+            vertical = module_store.get_item(vertical_location)
+
+            self.assertIsNotNone(vertical)
+            self.assertTrue(len(vertical.children) > 0)
+
+            video = module_store.get_item(vertical.children[0])
+            self.assertIsNotNone(video)
+            self.assertTrue(video.display_name == 'Test Video')
