@@ -1947,3 +1947,16 @@ class TestSendEmail(ModuleStoreTestCase):
         )
 
         self.assertIn("Re-verification Status", subject)
+
+    def test_denied_email_message_with_no_attempt_allowed(self):
+
+        subject, body = _compose_message_reverification_email(
+            self.course.id, self.user.id, "midterm", self.attempt, "denied", True
+        )
+
+        self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
+            course_name=self.course.display_name_with_default,
+            assessment=self.assessment), body
+        )
+
+        self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)

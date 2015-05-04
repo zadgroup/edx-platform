@@ -876,7 +876,7 @@ def _compose_message_reverification_email(course_key, user_id, relates_assessmen
         }
 
         ver_block = modulestore().get_item(usage_key)
-        allowed_attempts = ver_block.attempts
+        allowed_attempts = 1 if ver_block.attempts == 0 else ver_block.attempts
         user_attempts = VerificationStatus.get_user_attempts(user_id, course_key, relates_assessment, location_id)
         left_attempts = allowed_attempts - user_attempts
         is_attempt_allowed = (allowed_attempts - user_attempts) > 0
