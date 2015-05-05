@@ -24,6 +24,7 @@ from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from xmodule.modulestore.django import modulestore
 from xmodule.modulestore import ModuleStoreEnum
+from xmodule.modulestore.tests.factories import check_mongo_calls
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from opaque_keys.edx.locator import CourseLocator
 from microsite_configuration import microsite
@@ -2098,6 +2099,14 @@ class TestEmailMessageWithCustomICRVBlock(ModuleStoreTestCase):
             )
 
             self.assertIn("Assessment date has passed and retake not allowed", body)
+
+    def test_check_num_queries(self):
+        # Get the re-verification block to check the call made
+        with check_mongo_calls(2):
+            ver_block = modulestore().get_item(self.reverification_location)
+
+        # Expect that the verification block is fetched
+        self.assertIsNotNone(ver_block)
 
 
 class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
