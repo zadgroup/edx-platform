@@ -64,23 +64,25 @@ class BokChoyTestSuite(TestSuite):
             self.prepare_bokchoy_run()
 
         msg = colorize('green', "Waiting for servers to start...")
-        print(msg)
+        print msg
         bokchoy_utils.wait_for_test_servers()
         if self.serversonly:
             self.interruptable_prompt()
-
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(BokChoyTestSuite, self).__exit__(exc_type, exc_value, traceback)
 
         msg = colorize('green', "Cleaning up databases...")
-        print(msg)
+        print msg
 
         # Clean up data we created in the databases
         sh("./manage.py lms --settings bok_choy flush --traceback --noinput")
         bokchoy_utils.clear_mongo()
 
     def prepare_bokchoy_run(self):
+        """
+        Sets up and starts servers for bok-choy run. This includes any stubbed servers.
+        """
         sh("{}/scripts/reset-test-db.sh".format(Env.REPO_ROOT))
 
         if not self.fasttest:
@@ -118,8 +120,10 @@ class BokChoyTestSuite(TestSuite):
         bokchoy_utils.start_servers(self.default_store)
 
     def interruptable_prompt(self):
-        sh('read -p "Press a key to stop servers." PROMPTVAR',capture=True)
-
+        """
+        Stops running process and waits for user input before continuing.
+        """
+        sh('read -p "Press enter to stop servers." PROMPTVAR')
 
     @property
     def cmd(self):
