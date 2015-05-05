@@ -10,6 +10,7 @@ from uuid import uuid4
 from django.test.utils import override_settings
 import mock
 from mock import patch, Mock, ANY
+from django.utils import timezone
 import pytz
 import ddt
 from django.test.client import Client
@@ -1493,6 +1494,44 @@ class TestPhotoVerificationResultsCallback(ModuleStoreTestCase):
         self.assertEquals(response.content, 'OK!')
         self.assertIsNotNone(CourseEnrollment.objects.get(course_id=self.course_id))
 
+    @mock.patch('verify_student.ssencrypt.has_valid_signature', mock.Mock(side_effect=mocked_has_valid_signature))
+    def test_pass_in_course_reverify_result(self):
+        """
+        Test for verification passed.
+        """
+        checkpoint = VerificationCheckpoint(course_id=self.course_id, checkpoint_name="midterm")
+        checkpoint.save()
+        # attempt = SoftwareSecurePhotoVerification.objects.get(receipt_id=self.receipt_id)
+        checkpoint.add_verification_attempt(self.attempt)
+        # Create the 'edx-reverification-block' in course tree
+        section = ItemFactory.create(parent=self.course, category='chapter', display_name='Test Section')
+        subsection = ItemFactory.create(parent=section, category='sequential', display_name='Test Subsection')
+        vertical = ItemFactory.create(parent=subsection, category='vertical', display_name='Test Unit')
+        reverification = ItemFactory.create(
+            parent=vertical,
+            category='edx-reverification-block',
+            display_name='Test Verification Block'
+        )
+        VerificationStatus.add_verification_status(checkpoint, self.user, "submitted", reverification.location)
+        data = {
+            "EdX-ID": self.receipt_id,
+            "Result": "PASS",
+            "Reason": "",
+            "MessageType": "You have been verified."
+        }
+        json_data = json.dumps(data)
+        response = self.client.post(
+            reverse('verify_student_results_callback'), data=json_data,
+            content_type='application/json',
+            HTTP_AUTHORIZATION='test BBBBBBBBBBBBBBBBBBBB:testing',
+            HTTP_DATE='testdate'
+        )
+        attempt = SoftwareSecurePhotoVerification.objects.get(receipt_id=self.receipt_id)
+        self.assertEqual(attempt.status, u'approved')
+        self.assertEquals(response.content, 'OK!')
+        # Verify that photo submission confirmation email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual("Re-verification Status", mail.outbox[0].subject)
     @mock.patch('verify_student.views._send_email')
     @mock.patch('verify_student.ssencrypt.has_valid_signature', mock.Mock(side_effect=mocked_has_valid_signature))
     def test_reverification_on_callback(self, mock_send_email):
@@ -1509,6 +1548,7 @@ class TestPhotoVerificationResultsCallback(ModuleStoreTestCase):
             display_name='Test Verification Block',
             metadata={'attempts': 3, 'due': datetime(2099, 2, 22, tzinfo=pytz.UTC)}
         )
+
 
         # create a checkpoint with an assessment
         assessment = "midterm"
@@ -1952,6 +1992,7 @@ class TestSendEmail(ModuleStoreTestCase):
 
         self.course_key = SlashSeparatedCourseKey("Robot", "999", "Test_Course")
         self.course = CourseFactory.create(org='Robot', number='999', display_name='Test Course')
+        self.due_date = datetime(2015, 6, 22, tzinfo=pytz.UTC)
 
         # Create the course modes
         for mode in ('audit', 'honor', 'verified'):
@@ -1962,15 +2003,17 @@ class TestSendEmail(ModuleStoreTestCase):
         section = ItemFactory.create(parent=self.course, category='chapter', display_name='Test Section')
         subsection = ItemFactory.create(parent=section, category='sequential', display_name='Test Subsection')
         vertical = ItemFactory.create(parent=subsection, category='vertical', display_name='Test Unit')
-        reverification = ItemFactory.create(
+
+        self.reverification = ItemFactory.create(
             parent=vertical,
             category='edx-reverification-block',
             display_name='Test Verification Block'
         )
+
         self.section_location = section.location
         self.subsection_location = subsection.location
         self.vertical_location = vertical.location
-        self.reverification_location = reverification.location
+        self.reverification_location = self.reverification.location
         self.assessment = "midterm"
 
     def setUp(self):
@@ -2003,7 +2046,90 @@ class TestSendEmail(ModuleStoreTestCase):
 
         self.assertIn("Re-verification Status", subject)
 
+
+    def test_denied_email_message_with_valid_due_date_and_attempts_allowed(self):
+
+        subject, body = _compose_message_reverification_email(
+            self.course.id, self.user.id, "midterm", self.attempt, "denied", True
+        )
+
+        self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
+            course_name=self.course.display_name_with_default,
+            assessment=self.assessment), body
+        )
+
+        self.assertIn("Assessment closes on {due_date}".format(due_date=self.due_date), body)
+
+    def test_denied_email_message_with_close_verification_dates(self):
+
+        dt = datetime(2016, 1, 1, tzinfo=timezone.utc)
+        with patch.object(timezone, 'now', return_value=dt):
+            subject, body = _compose_message_reverification_email(
+                self.course.id, self.user.id, "midterm", self.attempt, "denied", True
+            )
+
+            self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
+                course_name=self.course.display_name_with_default,
+                assessment=self.assessment), body
+            )
+
+            self.assertIn("Assessment date has passed and retake not allowed", body)
+
+
+class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
+
+    def build_course(self):
+        """
+        Build up a course tree with a Reverificaiton xBlock.
+        """
+        # pylint: disable=attribute-defined-outside-init
+
+        self.course_key = SlashSeparatedCourseKey("Robot", "999", "Test_Course")
+        self.course = CourseFactory.create(org='Robot', number='999', display_name='Test Course')
+
+        # Create the course modes
+        for mode in ('audit', 'honor', 'verified'):
+            min_price = 0 if mode in ["honor", "audit"] else 1
+            CourseModeFactory(mode_slug=mode, course_id=self.course_key, min_price=min_price)
+
+        # Create the 'edx-reverification-block' in course tree
+        section = ItemFactory.create(parent=self.course, category='chapter', display_name='Test Section')
+        subsection = ItemFactory.create(parent=section, category='sequential', display_name='Test Subsection')
+        vertical = ItemFactory.create(parent=subsection, category='vertical', display_name='Test Unit')
+
+        self.reverification = ItemFactory.create(
+            parent=vertical,
+            category='edx-reverification-block',
+            display_name='Test Verification Block'
+        )
+
+        self.section_location = section.location
+        self.subsection_location = subsection.location
+        self.vertical_location = vertical.location
+        self.reverification_location = self.reverification.location
+        self.assessment = "midterm"
+
+    def setUp(self):
+        super(TestEmailMessageWithDefaultICRVBlock, self).setUp()
+
+        self.build_course()
+        self.check_point1 = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name=self.assessment)
+
+        self.check_point1.add_verification_attempt(SoftwareSecurePhotoVerification.objects.create(user=self.user))
+
+        self.dummy_reverification_item_id_1 = self.reverification_location
+
+
+        self.attempt = SoftwareSecurePhotoVerification.objects.filter(user=self.user)
+
     def test_denied_email_message_with_no_attempt_allowed(self):
+
+        VerificationStatus.add_verification_status(
+            checkpoint=self.check_point1,
+            user=self.user,
+            status='submitted',
+            location_id=self.dummy_reverification_item_id_1
+        )
 
         subject, body = _compose_message_reverification_email(
             self.course.id, self.user.id, "midterm", self.attempt, "denied", True
@@ -2015,3 +2141,50 @@ class TestSendEmail(ModuleStoreTestCase):
         )
 
         self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
+
+    def test_due_date(self):
+        self.reverification.due = datetime.now()
+        self.reverification.save()
+        VerificationStatus.add_verification_status(
+            checkpoint=self.check_point1,
+            user=self.user,
+            status='submitted',
+            location_id=self.reverification_location
+        )
+        subject, body = _compose_message_reverification_email(
+            self.course.id, self.user.id, "midterm", self.attempt, "denied", True
+        )
+
+        self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
+            course_name=self.course.display_name_with_default,
+            assessment=self.assessment), body
+        )
+
+        self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
+        self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
+
+    def test_denied_email_message_with_no_due_date(self):
+
+        VerificationStatus.add_verification_status(
+            checkpoint=self.check_point1,
+            user=self.user,
+            status='error',
+            location_id=self.dummy_reverification_item_id_1
+        )
+
+        subject, body = _compose_message_reverification_email(
+            self.course.id, self.user.id, "midterm", self.attempt, "denied", True
+        )
+
+        self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
+            course_name=self.course.display_name_with_default,
+            assessment=self.assessment), body
+        )
+
+        self.assertIn("Assessment is open and you are left 1 attempt", body)
+
+    def test_error_on_compose_email(self):
+        resp = _compose_message_reverification_email(
+            self.course.id, self.user.id, "midterm", self.attempt, "denied", True
+        )
+        self.assertIsNone(resp)

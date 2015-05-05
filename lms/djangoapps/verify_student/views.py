@@ -909,7 +909,7 @@ def _compose_message_reverification_email(course_key, user_id, relates_assessmen
         log.error("The email for re-verification sending failed for user_id {}".format(user_id))
 
 
-def _send_email(user_id, message, subject):
+def _send_email(user_id, subject, message):
 
     from_address = microsite.get_value(
         'email_from_address',

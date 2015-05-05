@@ -11,17 +11,17 @@
     ).format(course_name=course_name, assessment=assessment)}
 
     % if not is_attempt_allowed:
-        ${_("You have acceded your allowed attempts no more retakes allowed")}
+        ${_("You have reached your allowed attempts. No more retakes allowed.")}
     % elif not verification_open:
-        ${_("Assessment date has passed and retake not allowed")}
+        ${_("Assessment date has passed and retake not allowed.")}
     % else:
         % if due_date:
-            ${_("Assessment closes on {due_date}".format(due_date=due_date))}
+            ${_("Assessment closes on {due_date}.".format(due_date=due_date))}
         % else:
-            ${_("Assessment is open and you are left {left_attempts} attempt(s)".format(left_attempts=left_attempts))}
+            ${_("Assessment is open and you have {left_attempts} attempt(s) remaining.".format(left_attempts=left_attempts))}
         % endif
 
-        ${_("Click on below link to re-verify")}
+        ${_("Click on link below to re-verify:")}
         % if is_secure:
           https://${ site }${ reverify_link }
         % else:
@@ -31,7 +31,7 @@
     % endif
 % endif
 
-    ${_("Click on below link to return to the courseware")}
+    ${_("Click on link below to go to the courseware:")}
     % if is_secure:
       https://${ site }${ courseware_url }
     % else:
@@ -40,4 +40,4 @@
 
 
 
-${_("The {platform_name} Team").format(platform_name=settings.PLATFORM_NAME)}
+${_("The {platform_name} Team.").format(platform_name=settings.PLATFORM_NAME)}
