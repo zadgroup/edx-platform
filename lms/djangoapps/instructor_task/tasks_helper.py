@@ -775,19 +775,13 @@ def upload_problem_grade_report(_xmodule_instance_args, _entry_id, course_id, _t
         for problem_id in problems:
             try:
                 problem_score = problem_scores[problem_id]
-                # iterate_grades_for skips problems that students have never seen to
-                # speed up report generation.  We can tell that a problem has been
-                # skipped if its module_id is None (and we check that earned is 0
-                # for completeness).
-                if problem_score.module_id is None and problem_score.possible == 0:
-                    earned_possible_values.append([problem_score.earned, 'N/A'])
-                else:
-                    earned_possible_values.append([problem_score.earned, problem_score.possible])
+                earned_possible_values.append([problem_score.earned, problem_score.possible])
             except KeyError:
-                # student has not been graded on this problem.  Either the
-                # problem does not belong to a graded section (funky XML) or the
-                # student does not have access to it (e.g. A/B test or cohorted
-                # courseware).
+                # The student has not been graded on this problem.  For example,
+                # iterate_grades_for skips problems that students have never
+                # seen in order to speed up report generation.  It could also be
+                # the case that the student does not have access to it (e.g. A/B
+                # test or cohorted courseware).
                 earned_possible_values.append(['N/A', 'N/A'])
         rows.append(student_fields + [final_grade] + list(chain.from_iterable(earned_possible_values)))
 
