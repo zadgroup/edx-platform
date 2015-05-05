@@ -358,6 +358,7 @@ class EdxNotesPageTest(EdxNotesTestMixin):
                 text="",
                 quote=u"Annotate this text",
                 updated=datetime(2012, 1, 1, 1, 1, 1, 1).isoformat(),
+                tags=["Review", "cool"]
             ),
             Note(
                 usage_id=xblocks[0].locator,
@@ -367,6 +368,7 @@ class EdxNotesPageTest(EdxNotesTestMixin):
                 quote="Annotate this text",
                 updated=datetime(2013, 1, 1, 1, 1, 1, 1).isoformat(),
                 ranges=[Range(startOffset=0, endOffset=18)],
+                tags=["Cool", "TODO"]
             ),
             Note(
                 usage_id=xblocks[3].locator,
@@ -375,6 +377,7 @@ class EdxNotesPageTest(EdxNotesTestMixin):
                 text="Fourth note",
                 quote="",
                 updated=datetime(2014, 1, 1, 1, 1, 1, 1).isoformat(),
+                tags=["review"]
             ),
             Note(
                 usage_id=xblocks[1].locator,
@@ -386,23 +389,21 @@ class EdxNotesPageTest(EdxNotesTestMixin):
             ),
         ])
 
-    def assertNoteContent(self, item, text=None, quote=None, unit_name=None, time_updated=None):
-        if item.text is not None:
-            self.assertEqual(text, item.text)
-        else:
-            self.assertIsNone(text)
+    def assertNoteContent(self, item, text=None, quote=None, unit_name=None, time_updated=None, tags=None):
+        self.assertEqual(text, item.text)
         if item.quote is not None:
             self.assertIn(quote, item.quote)
         else:
             self.assertIsNone(quote)
         self.assertEqual(unit_name, item.unit_name)
         self.assertEqual(time_updated, item.time_updated)
+        self.assertEqual(tags, item.tags)
 
-    def assertGroupContent(self, item, title=None, subtitles=None):
+    def assertChapterContent(self, item, title=None, subtitles=None):
         self.assertEqual(item.title, title)
         self.assertEqual(item.subtitles, subtitles)
 
-    def assertSectionContent(self, item, title=None, notes=None):
+    def assertGroupContent(self, item, title=None, notes=None):
         self.assertEqual(item.title, title)
         self.assertEqual(item.notes, notes)
 
@@ -443,7 +444,8 @@ class EdxNotesPageTest(EdxNotesTestMixin):
             notes[1],
             text=u"Fourth note",
             unit_name="Test Unit 3",
-            time_updated="Jan 01, 2014 at 01:01 UTC"
+            time_updated="Jan 01, 2014 at 01:01 UTC",
+            tags="review"
         )
 
         self.assertNoteContent(
@@ -451,14 +453,16 @@ class EdxNotesPageTest(EdxNotesTestMixin):
             quote="Annotate this text",
             text=u"Third note",
             unit_name="Test Unit 1",
-            time_updated="Jan 01, 2013 at 01:01 UTC"
+            time_updated="Jan 01, 2013 at 01:01 UTC",
+            tags="Cool, TODO"
         )
 
         self.assertNoteContent(
             notes[3],
             quote=u"Annotate this text",
             unit_name="Test Unit 2",
-            time_updated="Jan 01, 2012 at 01:01 UTC"
+            time_updated="Jan 01, 2012 at 01:01 UTC",
+            tags="Review, cool"
         )
 
         self.assertNoteContent(
@@ -482,19 +486,19 @@ class EdxNotesPageTest(EdxNotesTestMixin):
         self.notes_page.visit().switch_to_tab("structure")
 
         notes = self.notes_page.notes
-        groups = self.notes_page.groups
-        sections = self.notes_page.sections
+        groups = self.notes_page.chapter_groups
+        sections = self.notes_page.subsection_groups
         self.assertEqual(len(notes), 5)
         self.assertEqual(len(groups), 2)
         self.assertEqual(len(sections), 3)
 
-        self.assertGroupContent(
+        self.assertChapterContent(
             groups[0],
             title=u"Test Section 1",
             subtitles=[u"Test Subsection 1", u"Test Subsection 2"]
         )
 
-        self.assertSectionContent(
+        self.assertGroupContent(
             sections[0],
             title=u"Test Subsection 1",
             notes=[u"Fifth note", u"Third note", None]
@@ -513,17 +517,19 @@ class EdxNotesPageTest(EdxNotesTestMixin):
             quote=u"Annotate this text",
             text=u"Third note",
             unit_name="Test Unit 1",
-            time_updated="Jan 01, 2013 at 01:01 UTC"
+            time_updated="Jan 01, 2013 at 01:01 UTC",
+            tags="Cool, TODO"
         )
 
         self.assertNoteContent(
             notes[2],
             quote=u"Annotate this text",
             unit_name="Test Unit 2",
-            time_updated="Jan 01, 2012 at 01:01 UTC"
+            time_updated="Jan 01, 2012 at 01:01 UTC",
+            tags="Review, cool"
         )
 
-        self.assertSectionContent(
+        self.assertGroupContent(
             sections[1],
             title=u"Test Subsection 2",
             notes=[u"Fourth note"]
@@ -533,16 +539,17 @@ class EdxNotesPageTest(EdxNotesTestMixin):
             notes[3],
             text=u"Fourth note",
             unit_name="Test Unit 3",
-            time_updated="Jan 01, 2014 at 01:01 UTC"
+            time_updated="Jan 01, 2014 at 01:01 UTC",
+            tags="review"
         )
 
-        self.assertGroupContent(
+        self.assertChapterContent(
             groups[1],
             title=u"Test Section 2",
             subtitles=[u"Test Subsection 3"],
         )
 
-        self.assertSectionContent(
+        self.assertGroupContent(
             sections[2],
             title=u"Test Subsection 3",
             notes=[u"First note"]
@@ -550,6 +557,109 @@ class EdxNotesPageTest(EdxNotesTestMixin):
 
         self.assertNoteContent(
             notes[4],
+            quote=u"Annotate this text",
+            text=u"First note",
+            unit_name="Test Unit 4",
+            time_updated="Jan 01, 2011 at 01:01 UTC"
+        )
+
+    def test_tags_view(self):
+        """
+        Scenario: User can view all notes by associated tags.
+        Given I have a course with 5 notes
+        When I open Notes page
+        And I switch to "Tags" view
+        Then I see 4 tag groups
+        And I see correct content in the notes and groups
+        """
+        self._add_default_notes()
+        self.notes_page.visit().switch_to_tab("tags")
+
+        notes = self.notes_page.notes
+        groups = self.notes_page.tag_groups
+        self.assertEqual(len(notes), 7)
+        self.assertEqual(len(groups), 4)
+
+        # Tag group "review"
+        self.assertGroupContent(
+            groups[0],
+            title=u"review",
+            notes=[u"Fourth note", None]
+        )
+
+        self.assertNoteContent(
+            notes[0],
+            text=u"Fourth note",
+            unit_name="Test Unit 3",
+            time_updated="Jan 01, 2014 at 01:01 UTC",
+            tags="review"
+        )
+
+        self.assertNoteContent(
+            notes[1],
+            quote=u"Annotate this text",
+            unit_name="Test Unit 2",
+            time_updated="Jan 01, 2012 at 01:01 UTC",
+            tags="Review, cool"
+        )
+
+        # Tag group "cool"
+        self.assertGroupContent(
+            groups[1],
+            title=u"cool",
+            notes=[u"Third note", None]
+        )
+
+        self.assertNoteContent(
+            notes[2],
+            quote=u"Annotate this text",
+            text=u"Third note",
+            unit_name="Test Unit 1",
+            time_updated="Jan 01, 2013 at 01:01 UTC",
+            tags="Cool, TODO"
+        )
+
+        self.assertNoteContent(
+            notes[3],
+            quote=u"Annotate this text",
+            unit_name="Test Unit 2",
+            time_updated="Jan 01, 2012 at 01:01 UTC",
+            tags="Review, cool"
+        )
+
+        # Tag group "todo"
+        self.assertGroupContent(
+            groups[2],
+            title=u"todo",
+            notes=["Third note"]
+        )
+
+        self.assertNoteContent(
+            notes[4],
+            quote=u"Annotate this text",
+            text=u"Third note",
+            unit_name="Test Unit 1",
+            time_updated="Jan 01, 2013 at 01:01 UTC",
+            tags="Cool, TODO"
+        )
+
+        # Notes with no tags
+        self.assertGroupContent(
+            groups[3],
+            title=u"no tags",
+            notes=["Fifth note", "First note"]
+        )
+
+        self.assertNoteContent(
+            notes[5],
+            quote=u"Annotate this text",
+            text=u"Fifth note",
+            unit_name="Test Unit 1",
+            time_updated="Jan 01, 2015 at 01:01 UTC"
+        )
+
+        self.assertNoteContent(
+            notes[6],
             quote=u"Annotate this text",
             text=u"First note",
             unit_name="Test Unit 4",
@@ -617,14 +727,48 @@ class EdxNotesPageTest(EdxNotesTestMixin):
         # Error message disappears
         self.assertFalse(self.notes_page.is_error_visible)
         self.assertIn(u"Search Results", self.notes_page.tabs)
-        self.assertEqual(len(self.notes_page.notes), 4)
+        notes = self.notes_page.notes
+        self.assertEqual(len(notes), 4)
+
+        self.assertNoteContent(
+            notes[0],
+            quote=u"Annotate this text",
+            text=u"Fifth note",
+            unit_name="Test Unit 1",
+            time_updated="Jan 01, 2015 at 01:01 UTC"
+        )
+
+        self.assertNoteContent(
+            notes[1],
+            text=u"Fourth note",
+            unit_name="Test Unit 3",
+            time_updated="Jan 01, 2014 at 01:01 UTC",
+            tags="review"
+        )
+
+        self.assertNoteContent(
+            notes[2],
+            quote="Annotate this text",
+            text=u"Third note",
+            unit_name="Test Unit 1",
+            time_updated="Jan 01, 2013 at 01:01 UTC",
+            tags="Cool, TODO"
+        )
+
+        self.assertNoteContent(
+            notes[3],
+            quote=u"Annotate this text",
+            text=u"First note",
+            unit_name="Test Unit 4",
+            time_updated="Jan 01, 2011 at 01:01 UTC"
+        )
 
     def test_tabs_behaves_correctly(self):
         """
         Scenario: Tabs behaves correctly.
         Given I have a course with 5 notes
         When I open Notes page
-        Then I see only "Recent Activity" and "Location in Course" tabs
+        Then I see only "Recent Activity", "Location in Course", and "Tags" tabs
         When I run the search with "note" query
         And I see that "Search Results" tab appears with 4 notes found
         Then I switch to "Recent Activity" tab
@@ -642,24 +786,24 @@ class EdxNotesPageTest(EdxNotesTestMixin):
         self.notes_page.visit()
 
         # We're on Recent Activity tab.
-        self.assertEqual(len(self.notes_page.tabs), 2)
-        self.assertEqual([u"Recent Activity", u"Location in Course"], self.notes_page.tabs)
+        self.assertEqual(len(self.notes_page.tabs), 3)
+        self.assertEqual([u"Recent Activity", u"Location in Course", u"Tags"], self.notes_page.tabs)
         self.notes_page.search("note")
         # We're on Search Results tab
-        self.assertEqual(len(self.notes_page.tabs), 3)
+        self.assertEqual(len(self.notes_page.tabs), 4)
         self.assertIn(u"Search Results", self.notes_page.tabs)
         self.assertEqual(len(self.notes_page.notes), 4)
         # We can switch on Recent Activity tab and back.
         self.notes_page.switch_to_tab("recent")
         self.assertEqual(len(self.notes_page.notes), 5)
         self.notes_page.switch_to_tab("structure")
-        self.assertEqual(len(self.notes_page.groups), 2)
+        self.assertEqual(len(self.notes_page.chapter_groups), 2)
         self.assertEqual(len(self.notes_page.notes), 5)
         self.notes_page.switch_to_tab("search")
         self.assertEqual(len(self.notes_page.notes), 4)
         # Can close search results page
         self.notes_page.close_tab("search")
-        self.assertEqual(len(self.notes_page.tabs), 2)
+        self.assertEqual(len(self.notes_page.tabs), 3)
         self.assertNotIn(u"Search Results", self.notes_page.tabs)
         self.assertEqual(len(self.notes_page.notes), 5)
 
