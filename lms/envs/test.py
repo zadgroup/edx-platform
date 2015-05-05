@@ -479,6 +479,7 @@ FEATURES['CERTIFICATES_HTML_VIEW'] = True
 INSTALLED_APPS += ('ccx',)
 MIDDLEWARE_CLASSES += ('ccx.overrides.CcxMiddleware',)
 FEATURES['CUSTOM_COURSES_EDX'] = True
+FIELD_OVERRIDE_PROVIDERS += ('ccx.overrides.CustomCoursesForEdxOverrideProvider',)
 
 # Set dummy values for profile image settings.
 PROFILE_IMAGE_BACKEND = {

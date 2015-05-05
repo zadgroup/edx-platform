@@ -19,7 +19,7 @@ from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from pyquery import PyQuery
 from courseware.module_render import hash_resource
 from xblock.field_data import FieldData
-from xblock.runtime import Runtime
+from xblock.runtime import Runtime, KvsFieldData
 from xblock.fields import ScopeIds
 from xblock.core import XBlock
 from xblock.fragment import Fragment
@@ -248,6 +248,39 @@ class ModuleRenderTestCase(ModuleStoreTestCase, LoginEnrollmentTestCase):
         field_data_cache = FieldDataCache([self.toy_course, descriptor], self.toy_course.id, self.mock_user)
         render.get_module_for_descriptor(self.mock_user, request, descriptor, field_data_cache, self.toy_course.id)
         render.get_module_for_descriptor(self.mock_user, request, descriptor, field_data_cache, self.toy_course.id)
+
+    def test_rebind_different_users(self):
+        request = self.request_factory.get('')
+        request.user = self.mock_user
+        course = CourseFactory()
+        descriptor = ItemFactory(category='html', parent=course)
+        # at this point, descriptor shouldn't have _unwrapped_field_data defined on it
+        with self.assertRaises(AttributeError):
+            descriptor._unwrapped_field_data
+
+        field_data_cache = FieldDataCache(
+            [self.toy_course, descriptor], self.toy_course.id, self.mock_user
+        )
+        render.get_module_for_descriptor(
+            self.mock_user, request, descriptor, field_data_cache, self.toy_course.id
+        )
+        # at the point, descriptor._unwrapped_field_data should be set
+        descriptor._unwrapped_field_data
+
+        # now bind this module to a few other students
+        for user in [UserFactory(), UserFactory(), UserFactory()]:
+            render.get_module_for_descriptor(
+                user, request, descriptor, field_data_cache, self.toy_course.id
+            )
+
+        # now make sure you get a KvsFieldData here:
+        self.assertTrue(
+            isinstance(
+                descriptor._field_data._authored_data._source.fallback,
+                KvsFieldData
+            )
+        )
+
 
     def test_hash_resource(self):
         """
