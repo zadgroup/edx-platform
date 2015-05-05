@@ -22,6 +22,7 @@ setup(
             'ccx = lms.djangoapps.ccx.feature:CcxFeature',
             'edxnotes = lms.djangoapps.edxnotes.feature:EdxNotesFeature',
             'instructor_tab = lms.djangoapps.instructor.feature:InstructorTabFeature',
+            'teams = lms.djangoapps.teams.feature:TeamsFeature',
         ],
         'openedx.user_partition_scheme': [
             'random = openedx.core.djangoapps.user_api.partition_schemes:RandomUserPartitionScheme',
