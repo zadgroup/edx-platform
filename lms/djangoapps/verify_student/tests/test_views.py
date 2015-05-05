@@ -26,6 +26,7 @@ from xmodule.modulestore.django import modulestore
 from xmodule.modulestore import ModuleStoreEnum
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from opaque_keys.edx.locator import CourseLocator
+from microsite_configuration import microsite
 
 from edxmako.shortcuts import render_to_string
 from openedx.core.djangoapps.user_api.accounts.api import get_account_settings
@@ -2016,6 +2017,15 @@ class TestSendEmail(ModuleStoreTestCase):
         self.reverification_location = self.reverification.location
         self.assessment = "midterm"
 
+        self.re_verification_link = reverse(
+            'verify_student_incourse_reverify',
+            args=(
+                unicode(self.course_key),
+                unicode(self.assessment),
+                unicode(self.reverification_location)
+            )
+        )
+
     def setUp(self):
         super(TestSendEmail, self).setUp()
         self.build_course()
@@ -2059,6 +2069,11 @@ class TestSendEmail(ModuleStoreTestCase):
         )
 
         self.assertIn("Assessment closes on {due_date}".format(due_date=self.due_date), body)
+        self.assertIn("Assessment is open and you are left 1 attempt", body)
+        self.assertIn("Click on below link to re-verify", body)
+        self.assertIn("https://{}{}".format(
+            microsite.get_value('SITE_NAME', 'localhost'), self.re_verification_link), body
+        )
 
     def test_denied_email_message_with_close_verification_dates(self):
 
@@ -2109,6 +2124,15 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
         self.reverification_location = self.reverification.location
         self.assessment = "midterm"
 
+        self.re_verification_link = reverse(
+            'verify_student_incourse_reverify',
+            args=(
+                unicode(self.course_key),
+                unicode(self.assessment),
+                unicode(self.reverification_location)
+            )
+        )
+
     def setUp(self):
         super(TestEmailMessageWithDefaultICRVBlock, self).setUp()
 
@@ -2140,11 +2164,12 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
             assessment=self.assessment), body
         )
 
-        self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
+        self.assertIn("You have reached your allowed attempts. No more retakes allowed.", body)
 
     def test_due_date(self):
         self.reverification.due = datetime.now()
         self.reverification.save()
+
         VerificationStatus.add_verification_status(
             checkpoint=self.check_point1,
             user=self.user,
@@ -2160,8 +2185,7 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
             assessment=self.assessment), body
         )
 
-        self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
-        self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
+        self.assertIn("You have reached your allowed attempts. No more retakes allowed.", body)
 
     def test_denied_email_message_with_no_due_date(self):
 
@@ -2181,7 +2205,11 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
             assessment=self.assessment), body
         )
 
-        self.assertIn("Assessment is open and you are left 1 attempt", body)
+        self.assertIn("Assessment is open and you have 1 attempt(s) remaining.", body)
+        self.assertIn("Click on link below to re-verify", body)
+        self.assertIn("https://{}{}".format(
+            microsite.get_value('SITE_NAME', 'localhost'), self.re_verification_link), body
+        )
 
     def test_error_on_compose_email(self):
         resp = _compose_message_reverification_email(
