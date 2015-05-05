@@ -44,7 +44,7 @@ class LmsSearchFilterGeneratorTestCase(ModuleStoreTestCase):
         """
         Tests that we get the list of IDs of courses the user is enrolled in when the course ID is null or not provided
         """
-        field_dictionary, filter_dictionary = LmsSearchFilterGenerator.generate_field_filters(user=self.user)
+        field_dictionary, filter_dictionary, _ = LmsSearchFilterGenerator.generate_field_filters(user=self.user)
 
         self.assertTrue('start_date' in filter_dictionary)
         self.assertIn(unicode(self.courses[0].id), field_dictionary['course'])
@@ -54,7 +54,7 @@ class LmsSearchFilterGeneratorTestCase(ModuleStoreTestCase):
         """
         Tests that we get the course ID when the course ID is provided
         """
-        field_dictionary, filter_dictionary = LmsSearchFilterGenerator.generate_field_filters(
+        field_dictionary, filter_dictionary, _ = LmsSearchFilterGenerator.generate_field_filters(
             user=self.user,
             course_id=unicode(self.courses[0].id)
         )
@@ -66,7 +66,7 @@ class LmsSearchFilterGeneratorTestCase(ModuleStoreTestCase):
         """
         Tests that we get empty list of courses in case the user is not provided
         """
-        field_dictionary, filter_dictionary = LmsSearchFilterGenerator.generate_field_filters()
+        field_dictionary, filter_dictionary, _ = LmsSearchFilterGenerator.generate_field_filters()
 
         self.assertTrue('start_date' in filter_dictionary)
         self.assertEqual(0, len(field_dictionary['course']))
