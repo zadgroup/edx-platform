@@ -137,14 +137,6 @@ class OverrideFieldData(FieldData):
                         return value
         return self.fallback.default(block, name)
 
-    @classmethod
-    def wrapper_function(cls, user):
-        """
-        Given a user, this classmethod creates a partial function
-        that can be applied to field_data to wrap it.
-        """
-        return lambda wrapped: cls.wrap(user, wrapped)
-
 
 class _OverridesDisabled(threading.local):
     """
