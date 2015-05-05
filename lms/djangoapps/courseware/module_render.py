@@ -503,7 +503,7 @@ def get_module_system_for_user(user, field_data_cache,
             real_user.id,
             [
                 partial(OverrideFieldData.wrap, user=real_user),
-                partial(LmsFieldData.__init__, student_data=inner_student_data),
+                partial(LmsFieldData, student_data=inner_student_data),
             ],
         )
 
@@ -698,7 +698,7 @@ def get_module_for_descriptor_internal(user, descriptor, field_data_cache, cours
         user.id,
         [
             partial(OverrideFieldData.wrap, user=user),
-            partial(LmsFieldData.__init__, student_data=student_data),
+            partial(LmsFieldData, student_data=student_data),
         ],
     )
 
