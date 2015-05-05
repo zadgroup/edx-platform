@@ -99,10 +99,10 @@ class SettingsPage(CoursePage):
             "license type buttons are present",
         )
         button_xpath = (
-            "//section[@class='license']"
-            "/ul[@class='license-types']"
-            "/li[@class='license-type']"
-            "/button[contains(text(),'{license_name}')]"
+            "//section[contains(@class, 'license')]"
+            "//ul[contains(@class, 'license-types')]"
+            "//li[contains(@class, 'license-type')]"
+            "//button[contains(text(),'{license_name}')]"
         ).format(license_name=license_name)
         button = self.q(xpath=button_xpath)
         if not button.present:
