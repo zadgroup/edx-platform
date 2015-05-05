@@ -858,7 +858,22 @@ def submit_photos_for_verification(request):
     return HttpResponse(200)
 
 
-def _compose_message_reverification_email(course_key, user_id, relates_assessment, photo_verification, status, is_secure):
+def _compose_message_reverification_email(
+        course_key, user_id, relates_assessment, photo_verification, status, is_secure
+):  # pylint: disable=invalid-name
+    """ Composes subject and message for email
+
+    Args:
+        course_key(CourseKey): CourseKey object
+        user_id(str): User Id
+        relates_assessment(str): related assessment name
+        photo_verification(QuerySet/SoftwareSecure): A query set of SoftwareSecure objects or SoftwareSecure objec
+        status(str): approval status
+        is_secure(Bool): Is running on secure protocol or not
+
+    Returns:
+        None if any error occurred else Tuple of subject and message strings
+    """
     try:
         location_id = VerificationStatus.get_location_id(photo_verification)
         usage_key = UsageKey.from_string(location_id)
@@ -902,15 +917,28 @@ def _compose_message_reverification_email(course_key, user_id, relates_assessmen
             )
         )
         context["reverify_link"] = re_verification_link
+        message = render_to_string('emails/reverification_processed.txt', context)
+        log_message = "Sending email to User_Id={}. Attempts left for this user are {}. " \
+                      "Allowed attempts {}. " \
+                      "Due Date {}".format(str(user_id), left_attempts, allowed_attempts, str(ver_block.due))
+        log.info(log_message)
+        return subject, message
 
-        return subject, render_to_string('emails/reverification_processed.txt', context)
-
-    except Exception as exp:
+    except:  # pylint: disable=W0702
         log.error("The email for re-verification sending failed for user_id {}".format(user_id))
 
 
 def _send_email(user_id, subject, message):
+    """ Send email to given user
 
+    Args:
+        user_id(str): User Id
+        subject(str): Subject lines of emails
+        message(str): Email message body
+
+    Returns:
+        None
+    """
     from_address = microsite.get_value(
         'email_from_address',
         settings.DEFAULT_FROM_EMAIL
@@ -970,26 +998,26 @@ def results_callback(request):
     try:
         attempt = SoftwareSecurePhotoVerification.objects.get(receipt_id=receipt_id)
     except SoftwareSecurePhotoVerification.DoesNotExist:
-        log.error("Software Secure posted back for receipt_id {}, but not found".format(receipt_id))
+        log.error("Software Secure posted back for receipt_id %s, but not found", receipt_id)
         return HttpResponseBadRequest("edX ID {} not found".format(receipt_id))
 
     checkpoints = VerificationCheckpoint.objects.filter(photo_verification=attempt).all()
 
     if result == "PASS":
-        log.debug("Approving verification for {}".format(receipt_id))
+        log.debug("Approving verification for %s", receipt_id)
         attempt.approve()
         status = "approved"
     elif result == "FAIL":
-        log.debug("Denying verification for {}".format(receipt_id))
+        log.debug("Denying verification for %s", receipt_id)
         attempt.deny(json.dumps(reason), error_code=error_code)
         status = "denied"
     elif result == "SYSTEM FAIL":
-        log.debug("System failure for {} -- resetting to must_retry".format(receipt_id))
+        log.debug("System failure for %s -- resetting to must_retry", receipt_id)
         attempt.system_error(json.dumps(reason), error_code=error_code)
         status = "error"
         log.error("Software Secure callback attempt for %s failed: %s", receipt_id, reason)
     else:
-        log.error("Software Secure returned unknown result {}".format(result))
+        log.error("Software Secure returned unknown result %s", result)
         return HttpResponseBadRequest(
             "Result {} not understood. Known results: PASS, FAIL, SYSTEM FAIL".format(result)
         )

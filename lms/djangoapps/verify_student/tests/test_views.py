@@ -1532,6 +1532,7 @@ class TestPhotoVerificationResultsCallback(ModuleStoreTestCase):
         # Verify that photo submission confirmation email was sent
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual("Re-verification Status", mail.outbox[0].subject)
+
     @mock.patch('verify_student.views._send_email')
     @mock.patch('verify_student.ssencrypt.has_valid_signature', mock.Mock(side_effect=mocked_has_valid_signature))
     def test_reverification_on_callback(self, mock_send_email):
@@ -1548,8 +1549,6 @@ class TestPhotoVerificationResultsCallback(ModuleStoreTestCase):
             display_name='Test Verification Block',
             metadata={'attempts': 3, 'due': datetime(2099, 2, 22, tzinfo=pytz.UTC)}
         )
-
-
         # create a checkpoint with an assessment
         assessment = "midterm"
         check_point = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name=assessment)
@@ -1983,6 +1982,9 @@ class TestInCourseReverifyView(ModuleStoreTestCase):
 
 
 class TestSendEmail(ModuleStoreTestCase):
+    """
+    Test email sending on re-verification
+    """
 
     def build_course(self):
         """
@@ -2019,7 +2021,9 @@ class TestSendEmail(ModuleStoreTestCase):
     def setUp(self):
         super(TestSendEmail, self).setUp()
         self.build_course()
-        self.check_point1 = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name=self.assessment)
+        self.check_point1 = VerificationCheckpoint.objects.create(
+            course_id=self.course.id, checkpoint_name=self.assessment
+        )
 
         self.check_point1.add_verification_attempt(SoftwareSecurePhotoVerification.objects.create(user=self.user))
 
@@ -2041,42 +2045,44 @@ class TestSendEmail(ModuleStoreTestCase):
 
         self.assertIn("Your verification for course {course_name} and assessment {assessment} has been passed.".format(
             course_name=self.course.display_name_with_default,
-            assessment=self.assessment), body
-        )
+            assessment=self.assessment
+        ), body)
 
         self.assertIn("Re-verification Status", subject)
 
-
     def test_denied_email_message_with_valid_due_date_and_attempts_allowed(self):
 
-        subject, body = _compose_message_reverification_email(
+        __, body = _compose_message_reverification_email(
             self.course.id, self.user.id, "midterm", self.attempt, "denied", True
         )
 
         self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
             course_name=self.course.display_name_with_default,
-            assessment=self.assessment), body
-        )
+            assessment=self.assessment
+        ), body)
 
         self.assertIn("Assessment closes on {due_date}".format(due_date=self.due_date), body)
 
     def test_denied_email_message_with_close_verification_dates(self):
 
-        dt = datetime(2016, 1, 1, tzinfo=timezone.utc)
-        with patch.object(timezone, 'now', return_value=dt):
+        return_value = datetime(2016, 1, 1, tzinfo=timezone.utc)
+        with patch.object(timezone, 'now', return_value=return_value):
             subject, body = _compose_message_reverification_email(
                 self.course.id, self.user.id, "midterm", self.attempt, "denied", True
             )
 
             self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
                 course_name=self.course.display_name_with_default,
-                assessment=self.assessment), body
-            )
+                assessment=self.assessment
+            ), body)
 
             self.assertIn("Assessment date has passed and retake not allowed", body)
 
 
 class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
+    """
+    Test for In-course Re-verification
+    """
 
     def build_course(self):
         """
@@ -2113,13 +2119,12 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
         super(TestEmailMessageWithDefaultICRVBlock, self).setUp()
 
         self.build_course()
-        self.check_point1 = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name=self.assessment)
+        self.check_point1 = VerificationCheckpoint.objects.create(
+            course_id=self.course.id, checkpoint_name=self.assessment
+        )
 
         self.check_point1.add_verification_attempt(SoftwareSecurePhotoVerification.objects.create(user=self.user))
-
         self.dummy_reverification_item_id_1 = self.reverification_location
-
-
         self.attempt = SoftwareSecurePhotoVerification.objects.filter(user=self.user)
 
     def test_denied_email_message_with_no_attempt_allowed(self):
@@ -2131,14 +2136,14 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
             location_id=self.dummy_reverification_item_id_1
         )
 
-        subject, body = _compose_message_reverification_email(
+        __, body = _compose_message_reverification_email(
             self.course.id, self.user.id, "midterm", self.attempt, "denied", True
         )
 
         self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
             course_name=self.course.display_name_with_default,
-            assessment=self.assessment), body
-        )
+            assessment=self.assessment
+        ), body)
 
         self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
 
@@ -2151,14 +2156,14 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
             status='submitted',
             location_id=self.reverification_location
         )
-        subject, body = _compose_message_reverification_email(
+        __, body = _compose_message_reverification_email(
             self.course.id, self.user.id, "midterm", self.attempt, "denied", True
         )
 
         self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
             course_name=self.course.display_name_with_default,
-            assessment=self.assessment), body
-        )
+            assessment=self.assessment
+        ), body)
 
         self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
         self.assertIn("You have acceded your allowed attempts no more retakes allowed", body)
@@ -2172,14 +2177,14 @@ class TestEmailMessageWithDefaultICRVBlock(ModuleStoreTestCase):
             location_id=self.dummy_reverification_item_id_1
         )
 
-        subject, body = _compose_message_reverification_email(
+        __, body = _compose_message_reverification_email(
             self.course.id, self.user.id, "midterm", self.attempt, "denied", True
         )
 
         self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
             course_name=self.course.display_name_with_default,
-            assessment=self.assessment), body
-        )
+            assessment=self.assessment
+        ), body)
 
         self.assertIn("Assessment is open and you are left 1 attempt", body)
 

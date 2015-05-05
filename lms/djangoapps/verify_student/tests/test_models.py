@@ -765,7 +765,7 @@ class VerificationStatusTest(ModuleStoreTestCase):
         attempt = SoftwareSecurePhotoVerification.objects.filter(user=self.user)
 
         self.assertIsNotNone(VerificationStatus.get_location_id(attempt))
-        self.assertEqual(VerificationStatus.get_location_id(272), '')
+        self.assertEqual(VerificationStatus.get_location_id(None), '')
 
     def test_get_user_attempts(self):
 
@@ -780,9 +780,7 @@ class VerificationStatusTest(ModuleStoreTestCase):
         self.assertEqual(VerificationStatus.get_user_attempts(
             course_key=self.course.id,
             user_id=self.user.id,
-            related_assessment='midterm',location_id=self.dummy_reverification_item_id_1), 1)
-
-
+            related_assessment='midterm', location_id=self.dummy_reverification_item_id_1), 1)
 
 
 class SkippedReverificationTest(ModuleStoreTestCase):
