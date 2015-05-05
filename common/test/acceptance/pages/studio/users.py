@@ -64,7 +64,7 @@ class UsersPageMixin(PageObject):
         """
         Click on the "New Team Member" button
         """
-        self.q(css='.create-user-button').click()
+        self.q(css='.create-user-button').first.click()
 
     @property
     def new_user_form_visible(self):
@@ -88,6 +88,7 @@ class UsersPageMixin(PageObject):
 
     def add_user_to_course(self, email):
         """ Adds user to a course/library """
+        self.wait_for_element_visibility('.create-user-button', "Add team member button is available")
         self.click_add_button()
         self.wait_for(lambda: self.new_user_form_visible, "Add user form is visible")
         self.set_new_user_email(email)
