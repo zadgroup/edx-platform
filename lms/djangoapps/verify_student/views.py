@@ -384,7 +384,7 @@ class PayAndVerifyView(View):
         # get available payment processors
         if unexpired_paid_course_mode.sku:
             # transaction will be conducted via ecommerce service
-            processors = ecommerce_api_client(request.user).get_processors()
+            processors = ecommerce_api_client(request.user).processors.get()
         else:
             # transaction will be conducted using legacy shopping cart
             processors = [settings.CC_PROCESSOR_NAME]

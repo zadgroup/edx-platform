@@ -18,6 +18,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
 from django.core import mail
+import httpretty
 from bs4 import BeautifulSoup
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
@@ -650,13 +651,18 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase):
             course.start = kwargs.get('course_start')
             modulestore().update_item(course, ModuleStoreEnum.UserID.test)
 
+        mode_kwargs = {}
+        if kwargs.get('sku'):
+            mode_kwargs['sku'] = kwargs['sku']
+
         for course_mode in course_modes:
             min_price = (0 if course_mode in ["honor", "audit"] else self.MIN_PRICE)
             CourseModeFactory(
                 course_id=course.id,
                 mode_slug=course_mode,
                 mode_display_name=course_mode,
-                min_price=min_price
+                min_price=min_price,
+                **mode_kwargs
             )
 
         return course
@@ -818,6 +824,36 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase):
         response_dict = self._get_page_data(self._get_page('verify_student_start_flow', course.id))
 
         self.assertEqual(response_dict['course_name'], mode_display_name)
+
+    @httpretty.activate
+    @override_settings(
+        ECOMMERCE_API_URL=EcommerceApiTestMixin.ECOMMERCE_API_URL,
+        ECOMMERCE_API_SIGNING_KEY=EcommerceApiTestMixin.ECOMMERCE_API_SIGNING_KEY
+    )
+    def test_processors_api(self):
+        """Check that when working with a product being processed by the
+        ecommerce api, we correctly call to that api for the list of
+        available payment processors.
+        """
+        # setting a nonempty sku on the course will a trigger calls to
+        # the ecommerce api to get payment processors.
+        course = self._create_course("verified", sku='nonempty-sku')
+        self._enroll(course.id, "honor")
+
+        # mock out the payment processors endpoint
+        httpretty.register_uri(
+            httpretty.GET,
+            "{}/processors/".format(EcommerceApiTestMixin.ECOMMERCE_API_URL),
+            body=json.dumps(['foo', 'bar']),
+        )
+        # make the server request
+        response = self._get_page('verify_student_start_flow', course.id)
+        self.assertEqual(response.status_code, 200)
+
+        # ensure the mock api call was made.  NOTE: the following line
+        # approximates the check - if the headers were empty it means
+        # there was no last request.
+        self.assertNotEqual(httpretty.last_request().headers, {})
 
 
 class CheckoutTestMixin(object):
