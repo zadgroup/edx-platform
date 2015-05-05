@@ -8,13 +8,13 @@ metadata:
 
         You can use the following example problem as a model.
          _____________________________________________________________________________
-
+         {{
         >>What was the first post-secondary school in China to allow both male and female students?<<
 
         = Nanjing Higher Normal Institute
         or= National Central University
         or= Nanjing University
-
+        }}
         [explanation]
         Nanjing Higher Normal Institute first admitted female students in 1920.
         [explanation]

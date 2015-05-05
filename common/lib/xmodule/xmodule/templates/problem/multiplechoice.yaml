@@ -8,12 +8,13 @@ metadata:
 
        You can use the following example problem as a model.
        _____________________________________________________________________________
-
+       {{
        >>Which of the following countries has the largest population?<<
        ( ) Brazil
        ( ) Germany
        (x) Indonesia
        ( ) Russia
+       }}
 
        [explanation]
        According to September 2014 estimates:

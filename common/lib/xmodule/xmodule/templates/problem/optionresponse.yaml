@@ -9,10 +9,12 @@ metadata:
          You can use the following example problem as a model.
 
          _____________________________________________________________________________
+         {{
 
           >>Which of the following countries celebrates its independence on August 15?<<
 
           [[(India), Spain, China, Bermuda]]
+          }}
 
           [explanation]
           India became an independent nation on August 15, 1947.
