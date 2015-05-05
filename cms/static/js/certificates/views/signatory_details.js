@@ -1,6 +1,5 @@
 /**
- * This class defines a details view for course certificates.
- * It is expected to be instantiated with a Certificate model.
+ * This class defines a details view for signatories of certificate.
  */
 define([
     'js/views/baseview', 'js/views/utils/view_utils', 'js/certificates/views/signatory_editor', 'underscore', "js/utils/templates", 'gettext', 'underscore.string'
@@ -40,7 +39,7 @@ function(BaseView, ViewUtils, SignatoryEditorView, _, TemplateUtils, gettext, st
         editSignatory: function(event) {
             console.log('signatory_details.editSignatory');
             if (event && event.preventDefault) { event.preventDefault(); }
-            var view =  new SignatoryEditorView({model: this.model});
+            var view =  new SignatoryEditorView({model: this.model, isEditingAllCollections: false});
             this.$el.html(view.render());
         },
 
@@ -68,7 +67,7 @@ function(BaseView, ViewUtils, SignatoryEditorView, _, TemplateUtils, gettext, st
 
         },
 
-        closeSignatoryEditView: function() {
+        closeSignatoryEditView: function(event) {
             if (event && event.preventDefault) { event.preventDefault(); }
             this.render();
         },

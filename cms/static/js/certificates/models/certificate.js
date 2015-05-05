@@ -20,7 +20,8 @@ function(Backbone, Signatory, SignatoryCollection, _, str, gettext) {
             collectionType: SignatoryCollection,
             collectionOptions: function(model) {
                 return {
-                    certificateUrl: model.collection.url
+                    certificateUrl: model.collection.url,
+                    certificateId: model.get('id')
                 };
             },
             reverseRelation: {

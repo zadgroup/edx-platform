@@ -7,9 +7,9 @@ function(Backbone, Signatory) {
     var SignatoryCollection = Backbone.Collection.extend({
         model: Signatory,
         initialize: function(attr, options) {
-            //TODO: You can ignore the signatories URL (format) at this time.
-            //TODO: 0 is pointing to id of certificate, it needs to be dynamic as well.
-            this.url = options.certificateUrl + '/0/signatories';
+            if(options.certificateId) {
+                this.url = options.certificateUrl + '/' + options.certificateId + '/signatories';
+            }
         }
     });
     console.log("signatory_collection.SignatoryCollection");
