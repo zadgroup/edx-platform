@@ -1983,7 +1983,7 @@ class TestInCourseReverifyView(ModuleStoreTestCase):
                        })
 
 
-class TestSendEmail(ModuleStoreTestCase):
+class TestEmailMessageWithCustomICRVBlock(ModuleStoreTestCase):
 
     def build_course(self):
         """
@@ -2008,7 +2008,8 @@ class TestSendEmail(ModuleStoreTestCase):
         self.reverification = ItemFactory.create(
             parent=vertical,
             category='edx-reverification-block',
-            display_name='Test Verification Block'
+            display_name='Test Verification Block',
+            metadata={'attempts': 3, 'due': self.due_date}
         )
 
         self.section_location = section.location
@@ -2027,7 +2028,7 @@ class TestSendEmail(ModuleStoreTestCase):
         )
 
     def setUp(self):
-        super(TestSendEmail, self).setUp()
+        super(TestEmailMessageWithCustomICRVBlock, self).setUp()
         self.build_course()
         self.check_point1 = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name=self.assessment)
 
@@ -2069,8 +2070,7 @@ class TestSendEmail(ModuleStoreTestCase):
         )
 
         self.assertIn("Assessment closes on {due_date}".format(due_date=self.due_date), body)
-        self.assertIn("Assessment is open and you are left 1 attempt", body)
-        self.assertIn("Click on below link to re-verify", body)
+        self.assertIn("Click on link below to re-verify", body)
         self.assertIn("https://{}{}".format(
             microsite.get_value('SITE_NAME', 'localhost'), self.re_verification_link), body
         )
