@@ -738,7 +738,7 @@ def _order_problems(blocks):
     return problems
 
 
-def upload_problem_grade_report(_xmodule_instance_args, _entry_id, course_id, _task_input, action_name):
+def upload_problem_grade_report(xmodule_instance_args, _entry_id, course_id, _task_input, action_name):
     """
     Generate a CSV containing all students' problem grades within a given
     `course_id`.
@@ -759,6 +759,10 @@ def upload_problem_grade_report(_xmodule_instance_args, _entry_id, course_id, _t
         blocks = course_structure.ordered_blocks
         problems = _order_problems(blocks)
     except CourseStructure.DoesNotExist:
+        TASK_LOG.error(
+            u"%s task (%s) could not run because course structure for course (%s) does not exist",
+            action_name, _get_task_id_from_xmodule_args(xmodule_instance_args), unicode(course_id)
+        )
         return task_progress.update_task_state(extra_meta={'step': 'Generating course structure. Please refresh and try again.'})
 
     # Just generate the static fields for now.
