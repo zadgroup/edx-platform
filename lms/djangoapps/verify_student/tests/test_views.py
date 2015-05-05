@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from django.test.utils import override_settings
 import mock
-from mock import patch, Mock
+from mock import patch, Mock, ANY
 import pytz
 import ddt
 from django.test.client import Client
@@ -26,6 +26,7 @@ from xmodule.modulestore import ModuleStoreEnum
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from opaque_keys.edx.locator import CourseLocator
 
+from edxmako.shortcuts import render_to_string
 from openedx.core.djangoapps.user_api.accounts.api import get_account_settings
 from commerce.tests import EcommerceApiTestMixin
 from student.tests.factories import UserFactory, CourseEnrollmentFactory
@@ -1491,6 +1492,60 @@ class TestPhotoVerificationResultsCallback(ModuleStoreTestCase):
         )
         self.assertEquals(response.content, 'OK!')
         self.assertIsNotNone(CourseEnrollment.objects.get(course_id=self.course_id))
+
+    @mock.patch('verify_student.views._send_email')
+    @mock.patch('verify_student.ssencrypt.has_valid_signature', mock.Mock(side_effect=mocked_has_valid_signature))
+    def test_reverification_on_callback(self, mock_send_email):
+        """
+        Test software secure callback flow for re-verification.
+        """
+        # Create the 'edx-reverification-block' in course tree
+        section = ItemFactory.create(parent=self.course, category='chapter', display_name='Test Section')
+        subsection = ItemFactory.create(parent=section, category='sequential', display_name='Test Subsection')
+        vertical = ItemFactory.create(parent=subsection, category='vertical', display_name='Test Unit')
+        reverification = ItemFactory.create(
+            parent=vertical,
+            category='edx-reverification-block',
+            display_name='Test Verification Block',
+            metadata={'attempts': 3, 'due': datetime(2099, 2, 22, tzinfo=pytz.UTC)}
+        )
+
+        # create a checkpoint with an assessment
+        assessment = "midterm"
+        check_point = VerificationCheckpoint.objects.create(course_id=self.course.id, checkpoint_name=assessment)
+        # create software secure photo verification entry against the checkpoint
+        attempt = SoftwareSecurePhotoVerification.objects.create(user=self.user, status='submitted')
+        check_point.add_verification_attempt(attempt)
+        # create verification status entry against the checkpoint with status 'submitted'
+        VerificationStatus.add_verification_status(
+            checkpoint=check_point,
+            user=self.user,
+            status='submitted',
+            location_id=reverification.location
+        )
+        receipt_id = attempt.receipt_id
+
+        # create dummy data for software secure photo verification result callback
+        data = {
+            "EdX-ID": receipt_id,
+            "Result": "PASS",
+            "Reason": "",
+            "MessageType": "You have been verified."
+        }
+        json_data = json.dumps(data)
+        response = self.client.post(
+            reverse('verify_student_results_callback'),
+            data=json_data,
+            content_type='application/json',
+            HTTP_AUTHORIZATION='test BBBBBBBBBBBBBBBBBBBB:testing',
+            HTTP_DATE='testdate'
+        )
+        self.assertEqual(response.content, 'OK!')
+
+        # now check that '_send_email' method is called on result callback
+        # with required parameters
+        subject = ''.join(render_to_string('emails/reverification_processed_subject.txt', {}).splitlines())
+        mock_send_email.assert_called_once_with(self.user.id, subject, ANY)
 
 
 class TestReverifyView(ModuleStoreTestCase):
