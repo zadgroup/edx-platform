@@ -4,9 +4,9 @@
     </label>
 <% } %>
 
-<% if (screenReaderLabel) { %>
+<% if (screenReaderTitle) { %>
     <label class="sr" for="u-field-select-<%- id %>">
-        <%- screenReaderLabel %>
+        <%- screenReaderTitle %>
     </label>
 <% } %>
 
