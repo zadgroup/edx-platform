@@ -214,9 +214,9 @@ def _load_preview_module(request, descriptor):
     """
     student_data = KvsFieldData(SessionKeyValueStore(request))
     if _has_author_view(descriptor):
-        wrapper = CmsFieldData.wrapper_function(student_data)
+        wrapper = partial(CmsFieldData.__init__, student_data=student_data)
     else:
-        wrapper = LmsFieldData.wrapper_function(student_data)
+        wrapper = partial(LmsFieldData.__init__, student_data=student_data)
     descriptor.bind_for_student(
         _preview_module_system(request, descriptor, field_data),
         request.user.id,

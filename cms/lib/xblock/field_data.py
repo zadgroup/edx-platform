@@ -30,10 +30,3 @@ class CmsFieldData(SplitFieldData):
             Scope.user_info: student_data,
             Scope.preferences: student_data,
         })
-
-    @classmethod
-    def wrapper_function(cls, student_data):
-        """
-        This classmethod creates a partial that can be applied to authored_data.
-        """
-        return lambda authored_data: cls(authored_data, student_data)
