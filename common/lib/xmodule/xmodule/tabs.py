@@ -2,6 +2,7 @@
 Implement CourseTab
 """
 from abc import ABCMeta, abstractmethod
+
 from xblock.fields import List
 
 # We should only scrape strings for i18n in this file, since the target language is known only when
@@ -51,11 +52,11 @@ class CourseTab(object):
 
         self.link_func = link_func
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):  # pylint: disable=unused-argument
+    def is_enabled(self, course, settings, user=None):  # pylint: disable=unused-argument
         """
-        Determines whether the tab should be displayed in the UI for the given course and a particular user.
-        This method is to be overridden by subclasses when applicable.  The base class implementation
-        always returns True.
+        Determines whether the tab is enabled for the given course and a particular user.
+        This method is to be overridden by subclasses when applicable.  The base class
+        implementation always returns True.
 
         Args:
             course: An xModule CourseDescriptor
@@ -67,17 +68,11 @@ class CourseTab(object):
              FEATURES['ENABLE_STUDENT_NOTES']
              FEATURES['ENABLE_TEXTBOOK']
 
-            is_user_authenticated: Indicates whether the user is authenticated.  If the tab is of
-             type AuthenticatedCourseTab and this value is False, then can_display will return False.
-
-            is_user_staff: Indicates whether the user has staff access to the course.  If the tab is of
-             type StaffTab and this value is False, then can_display will return False.
-
-            is_user_enrolled: Indicates whether the user is enrolled in the course
+            user: An optional user for whom the tab will be displayed. If none,
+                then the code should assume a staff user or an author.
 
         Returns:
-            A boolean value to indicate whether this instance of the tab should be displayed to a
-            given user for the given course.
+            A boolean value to indicate whether this instance of the tab is enabled.
         """
         return True
 
@@ -174,62 +169,93 @@ class CourseTab(object):
         Raises:
             InvalidTabsException if the given tab doesn't have the right keys.
         """
-        sub_class_types = {
-            'courseware': CoursewareTab,
-            'course_info': CourseInfoTab,
-            'wiki': WikiTab,
-            'discussion': DiscussionTab,
-            'external_discussion': ExternalDiscussionTab,
-            'external_link': ExternalLinkTab,
-            'textbooks': TextbookTabs,
-            'pdf_textbooks': PDFTextbookTabs,
-            'html_textbooks': HtmlTextbookTabs,
-            'progress': ProgressTab,
-            'static_tab': StaticTab,
-            'peer_grading': PeerGradingTab,
-            'staff_grading': StaffGradingTab,
-            'open_ended': OpenEndedGradingTab,
-            'notes': NotesTab,
-            'edxnotes': EdxNotesTab,
-            'syllabus': SyllabusTab,
-            'instructor': InstructorTab,  # not persisted
-            'ccx_coach': CcxCoachTab,  # not persisted
-        }
-
-        tab_type = tab_dict.get('type')
-        if tab_type not in sub_class_types:
+        available_tab_types = CourseTabManager.get_tab_types()
+        tab_type_name = tab_dict.get('type')
+        if tab_type_name not in available_tab_types:
             raise InvalidTabsException(
-                'Unknown tab type {0}. Known types: {1}'.format(tab_type, sub_class_types)
+                'Unknown tab type {0}. Known types: {1}'.format(tab_type_name, available_tab_types)
             )
+        tab_type = available_tab_types[tab_dict['type']]
+        tab_type.validate(tab_dict)
+        if isinstance(tab_type, CourseFeatureTabType):
+            return tab_type.create_tab(tab_dict)
+        else:
+            return tab_type(tab_dict=tab_dict)
 
-        tab_class = sub_class_types[tab_dict['type']]
-        tab_class.validate(tab_dict)
-        return tab_class(tab_dict=tab_dict)
+
+class CourseTabManager(object):
+    """
+    A manager that handles the set of available course tabs.
+    """
+
+    @staticmethod
+    def get_tab_types():
+        """
+        Returns the list of available tab types.
+        """
+        if not hasattr(CourseTabManager, "_tab_types"):
+            tab_types = {
+                'courseware': CoursewareTab,
+                'course_info': CourseInfoTab,
+                'wiki': WikiTab,
+                'discussion': DiscussionTab,
+                'external_discussion': ExternalDiscussionTab,
+                'external_link': ExternalLinkTab,
+                'textbooks': TextbookTabs,
+                'pdf_textbooks': PDFTextbookTabs,
+                'html_textbooks': HtmlTextbookTabs,
+                'progress': ProgressTab,
+                'static_tab': StaticTab,
+                'peer_grading': PeerGradingTab,
+                'staff_grading': StaffGradingTab,
+                'open_ended': OpenEndedGradingTab,
+                'notes': NotesTab,
+                'syllabus': SyllabusTab,
+            }
+
+            # Add any course tabs that have been registered by features
+            # TODO: don't import openedx capabilities from common
+            from openedx.core.djangoapps.features.api import FeatureManager
+            for feature in FeatureManager.get_available_features().values():
+                if hasattr(feature, "course_tab"):
+                    tab_types[feature.name] = CourseFeatureTabType(feature)
+
+            CourseTabManager._tab_types = tab_types
+        return CourseTabManager._tab_types
 
 
 class AuthenticatedCourseTab(CourseTab):
     """
     Abstract class for tabs that can be accessed by only authenticated users.
     """
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
-        return is_user_authenticated
+    def is_enabled(self, course, settings, user=None):
+        return not user or user.is_authenticated()
 
 
 class StaffTab(AuthenticatedCourseTab):
     """
     Abstract class for tabs that can be accessed by only users with staff access.
     """
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):  # pylint: disable=unused-argument
-        return is_user_staff
+    def is_enabled(self, course, settings, user=None):  # pylint: disable=unused-argument
+        from courseware.access import has_access
+        return not user or has_access(user, 'staff', course, course.id)
 
 
-class EnrolledOrStaffTab(CourseTab):
+class EnrolledOrStaffTab(AuthenticatedCourseTab):
     """
     Abstract class for tabs that can be accessed by only users with staff access
     or users enrolled in the course.
     """
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):  # pylint: disable=unused-argument
-        return is_user_authenticated and (is_user_staff or is_user_enrolled)
+    def is_enabled(self, course, settings, user=None):  # pylint: disable=unused-argument
+        if not user:
+            return True
+        return EnrolledOrStaffTab.is_user_enrolled_or_staff(course, user)
+
+    @staticmethod
+    def is_user_enrolled_or_staff(course, user):
+        from student.models import CourseEnrollment
+        from courseware.access import has_access
+        return has_access(user, 'staff', course, course.id) or CourseEnrollment.is_enrolled(user, course.id)
 
 
 class HideableTab(CourseTab):
@@ -323,10 +349,8 @@ class ProgressTab(EnrolledOrStaffTab):
             link_func=link_reverse_func(self.type),
         )
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
-        super_can_display = super(ProgressTab, self).can_display(
-            course, settings, is_user_authenticated, is_user_staff, is_user_enrolled
-        )
+    def is_enabled(self, course, settings, user=None):
+        super_can_display = super(ProgressTab, self).is_enabled(course, settings, user=user)
         return super_can_display and not course.hide_progress_tab
 
     @classmethod
@@ -350,10 +374,12 @@ class WikiTab(HideableTab):
             tab_dict=tab_dict,
         )
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
-        return settings.WIKI_ENABLED and (
-            course.allow_public_wiki_access or is_user_enrolled or is_user_staff
-        )
+    def is_enabled(self, course, settings, user=None):
+        if not settings.WIKI_ENABLED:
+            return False
+        if not user:
+            return True
+        return EnrolledOrStaffTab.is_user_enrolled_or_staff(course, user)
 
     @classmethod
     def validate(cls, tab_dict, raise_error=True):
@@ -375,14 +401,12 @@ class DiscussionTab(EnrolledOrStaffTab):
             link_func=link_reverse_func('django_comment_client.forum.views.forum_form_discussion'),
         )
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
+    def is_enabled(self, course, settings, user=None):
         if settings.FEATURES.get('CUSTOM_COURSES_EDX', False):
             from ccx.overrides import get_current_ccx  # pylint: disable=import-error
             if get_current_ccx():
                 return False
-        super_can_display = super(DiscussionTab, self).can_display(
-            course, settings, is_user_authenticated, is_user_staff, is_user_enrolled
-        )
+        super_can_display = super(DiscussionTab, self).is_enabled(course, settings, user=user)
         return settings.FEATURES.get('ENABLE_DISCUSSION_SERVICE') and super_can_display
 
     @classmethod
@@ -549,7 +573,7 @@ class TextbookTabs(TextbookTabsBase):
             tab_id=self.type,
         )
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
+    def is_enabled(self, course, settings, user=None):
         return settings.FEATURES.get('ENABLE_TEXTBOOK')
 
     def items(self, course):
@@ -668,7 +692,7 @@ class SyllabusTab(CourseTab):
     """
     type = 'syllabus'
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
+    def is_enabled(self, course, settings, user=None):
         return hasattr(course, 'syllabus_present') and course.syllabus_present
 
     def __init__(self, tab_dict=None):  # pylint: disable=unused-argument
@@ -686,7 +710,7 @@ class NotesTab(AuthenticatedCourseTab):
     """
     type = 'notes'
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
+    def is_enabled(self, course, settings, user=None):
         return settings.FEATURES.get('ENABLE_STUDENT_NOTES')
 
     def __init__(self, tab_dict=None):
@@ -701,77 +725,55 @@ class NotesTab(AuthenticatedCourseTab):
         return super(NotesTab, cls).validate(tab_dict, raise_error) and need_name(tab_dict, raise_error)
 
 
-class EdxNotesTab(AuthenticatedCourseTab):
+class CourseFeatureTabType(object):
     """
-    A tab for the course student notes.
+    The type of a tab provided by a course feature.
     """
-    type = 'edxnotes'
 
-    def can_display(self, course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
-        return settings.FEATURES.get('ENABLE_EDXNOTES')
+    def __init__(self, feature):
+        super(CourseFeatureTabType, self).__init__()
+        self.feature = feature
 
-    def __init__(self, tab_dict=None):
-        super(EdxNotesTab, self).__init__(
-            name=tab_dict['name'] if tab_dict else _('Notes'),
-            tab_id=self.type,
-            link_func=link_reverse_func(self.type),
+    def is_persistent(self):
+        """
+        Returns true if this feature's tab is persistent.
+        """
+        return self.feature.course_tab.get("is_persistent", True)
+
+    def validate(self, tab_dict, raise_error=True):
+        """
+        Validates that the specified dict is as expected.
+        """
+        pass
+
+    def create_tab(self, tab_dict):
+        """
+        Creates a tab instance of the correct type.
+        """
+        return CourseFeatureTab(self.feature, self.feature.course_tab, tab_dict=tab_dict)
+
+
+class CourseFeatureTab(AuthenticatedCourseTab):
+    """
+    A tab provided by a feature that has been included in a course.
+    """
+
+    def __init__(self, feature, course_tab, tab_dict=None):
+        super(CourseFeatureTab, self).__init__(
+            name=tab_dict['name'] if tab_dict else course_tab.get("title"),
+            tab_id=course_tab.get("type"),
+            link_func=link_reverse_func(course_tab.get("view_name")),
         )
+        self.feature = feature
+
+    def is_enabled(self, course, settings, user=None):
+        if not super(CourseFeatureTab, self).is_enabled(course, settings, user=user):
+            return False
+        return self.feature.is_enabled(course, settings, user=user)
 
     @classmethod
     def validate(cls, tab_dict, raise_error=True):
-        return super(EdxNotesTab, cls).validate(tab_dict, raise_error) and need_name(tab_dict, raise_error)
-
-
-class InstructorTab(StaffTab):
-    """
-    A tab for the course instructors.
-    """
-    type = 'instructor'
-
-    def __init__(self, tab_dict=None):  # pylint: disable=unused-argument
-        super(InstructorTab, self).__init__(
-            # Translators: 'Instructor' appears on the tab that leads to the instructor dashboard, which is
-            # a portal where an instructor can get data and perform various actions on their course
-            name=_('Instructor'),
-            tab_id=self.type,
-            link_func=link_reverse_func('instructor_dashboard'),
-        )
-
-
-class CcxCoachTab(CourseTab):
-    """
-    A tab for the custom course coaches.
-    """
-    type = 'ccx_coach'
-
-    def __init__(self, tab_dict=None):  # pylint: disable=unused-argument
-        super(CcxCoachTab, self).__init__(
-            name=_('CCX Coach'),
-            tab_id=self.type,
-            link_func=link_reverse_func('ccx_coach_dashboard'),
-        )
-
-    def can_display(self, course, settings, *args, **kw):
-        """
-        Since we don't get the user here, we use a thread local defined in the ccx
-        overrides to get it, then use the course to get the coach role and find out if
-        the user is one.
-        """
-        user_is_coach = False
-        if settings.FEATURES.get('CUSTOM_COURSES_EDX', False):
-            from opaque_keys.edx.locations import SlashSeparatedCourseKey
-            from student.roles import CourseCcxCoachRole  # pylint: disable=import-error
-            from ccx.overrides import get_current_request  # pylint: disable=import-error
-            course_id = course.id.to_deprecated_string()
-            course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
-            role = CourseCcxCoachRole(course_key)
-            request = get_current_request()
-            if request is not None:
-                user_is_coach = role.has_user(request.user)
-        super_can_display = super(CcxCoachTab, self).can_display(
-            course, settings, *args, **kw
-        )
-        return user_is_coach and super_can_display
+        return super(CourseFeatureTab, cls).validate(tab_dict, raise_error) and need_name(tab_dict, raise_error)
 
 
 class CourseTabList(List):
@@ -851,48 +853,32 @@ class CourseTabList(List):
         return next((tab for tab in tab_list if tab.tab_id == tab_id), None)
 
     @staticmethod
-    def iterate_displayable(
-            course,
-            settings,
-            is_user_authenticated=True,
-            is_user_staff=True,
-            is_user_enrolled=False
-    ):
+    def iterate_displayable(course, settings, user=None):
         """
         Generator method for iterating through all tabs that can be displayed for the given course and
         the given user with the provided access settings.
         """
         for tab in course.tabs:
-            if tab.can_display(
-                    course, settings, is_user_authenticated, is_user_staff, is_user_enrolled
-            ) and (not tab.is_hideable or not tab.is_hidden):
+            if tab.is_enabled(course, settings, user=user) and (not tab.is_hideable or not tab.is_hidden):
                 if tab.is_collection:
                     for item in tab.items(course):
                         yield item
                 else:
                     yield tab
-        instructor_tab = InstructorTab()
-        if instructor_tab.can_display(course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
-            yield instructor_tab
-        ccx_coach_tab = CcxCoachTab()
-        if ccx_coach_tab.can_display(course, settings, is_user_authenticated, is_user_staff, is_user_enrolled):
-            yield ccx_coach_tab
 
     @staticmethod
-    def iterate_displayable_cms(
-            course,
-            settings
-    ):
+    def get_dynamic_tabs(course, settings, user=None):
         """
-        Generator method for iterating through all tabs that can be displayed for the given course
-        with the provided settings.
+        Returns the dynamic tab types, i.e. that are not persistent.
         """
-        for tab in course.tabs:
-            if tab.can_display(course, settings, is_user_authenticated=True, is_user_staff=True, is_user_enrolled=True):
-                if tab.is_collection and not len(list(tab.items(course))):
-                    # do not yield collections that have no items
-                    continue
-                yield tab
+        dynamic_tabs = list()
+        for tab_type in CourseTabManager.get_tab_types().values():
+            if isinstance(tab_type, CourseFeatureTabType) and not tab_type.is_persistent():
+                tab = tab_type.create_tab({})
+                if tab.is_enabled(course, settings, user=user):
+                    dynamic_tabs.append(tab)
+        dynamic_tabs.sort(key=lambda tab_type: tab_type.name)
+        return dynamic_tabs
 
     @classmethod
     def validate_tabs(cls, tabs):
@@ -927,7 +913,8 @@ class CourseTabList(List):
                 TextbookTabs.type,
                 PDFTextbookTabs.type,
                 HtmlTextbookTabs.type,
-                EdxNotesTab.type]:
+                CourseFeatureTab.type
+        ]:
             cls._validate_num_tabs_of_type(tabs, tab_type, 1)
 
     @staticmethod

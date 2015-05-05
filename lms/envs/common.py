@@ -778,6 +778,10 @@ STATICFILES_DIRS = [
     PROJECT_ROOT / "static",
 ]
 
+# Add in the static files from each Django app that provides a feature
+for feature_app in ["teams"]:
+    STATICFILES_DIRS += [ PROJECT_ROOT / "djangoapps" / feature_app / "static" ]
+
 FAVICON_PATH = 'images/favicon.ico'
 
 # User-uploaded content

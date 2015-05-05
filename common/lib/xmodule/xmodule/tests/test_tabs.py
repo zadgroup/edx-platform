@@ -103,28 +103,28 @@ class TabTestCase(unittest.TestCase):
         if for_staff_only:
             self.assertEquals(
                 expected_value,
-                tab.can_display(
+                tab.is_enabled(
                     self.course, self.settings, is_user_authenticated=True, is_user_staff=True, is_user_enrolled=True
                 )
             )
         if for_authenticated_users_only:
             self.assertEquals(
                 expected_value,
-                tab.can_display(
+                tab.is_enabled(
                     self.course, self.settings, is_user_authenticated=True, is_user_staff=False, is_user_enrolled=False
                 )
             )
         if not for_staff_only and not for_authenticated_users_only and not for_enrolled_users_only:
             self.assertEquals(
                 expected_value,
-                tab.can_display(
+                tab.is_enabled(
                     self.course, self.settings, is_user_authenticated=False, is_user_staff=False, is_user_enrolled=False
                 )
             )
         if for_enrolled_users_only:
             self.assertEquals(
                 expected_value,
-                tab.can_display(
+                tab.is_enabled(
                     self.course, self.settings, is_user_authenticated=True, is_user_staff=False, is_user_enrolled=True
                 )
             )
@@ -291,7 +291,7 @@ class TextbooksTestCase(TabTestCase):
 
         self.settings.FEATURES['ENABLE_TEXTBOOK'] = True
         num_textbooks_found = 0
-        for tab in tabs.CourseTabList.iterate_displayable(self.course, self.settings):
+        for tab in tabs.CourseTabList.iterate_displayable(self.course, self.settings, user=self.user):
             # verify all textbook type tabs
             if isinstance(tab, tabs.SingleTextbookTab):
                 book_type, book_index = tab.tab_id.split("/", 1)
@@ -613,8 +613,8 @@ class CourseTabListTestCase(TabListTestCase):
         # initialize the course tabs to a list of all valid tabs
         self.course.tabs = self.all_valid_tab_list
 
-        # enumerate the tabs using the CMS call
-        for i, tab in enumerate(tabs.CourseTabList.iterate_displayable_cms(
+        # enumerate the tabs with no user
+        for i, tab in enumerate(tabs.CourseTabList.iterate_displayable(
             self.course,
             self.settings,
         )):
@@ -624,6 +624,7 @@ class CourseTabListTestCase(TabListTestCase):
         for i, tab in enumerate(tabs.CourseTabList.iterate_displayable(
             self.course,
             self.settings,
+            user=self.user
         )):
             if getattr(tab, 'is_collection_item', False):
                 # a collection item was found as a result of a collection tab
@@ -638,14 +639,14 @@ class CourseTabListTestCase(TabListTestCase):
         # test including non-empty collections
         self.assertIn(
             tabs.HtmlTextbookTabs(),
-            list(tabs.CourseTabList.iterate_displayable_cms(self.course, self.settings)),
+            list(tabs.CourseTabList.iterate_displayable(self.course, self.settings)),
         )
 
         # test not including empty collections
         self.course.html_textbooks = []
         self.assertNotIn(
             tabs.HtmlTextbookTabs(),
-            list(tabs.CourseTabList.iterate_displayable_cms(self.course, self.settings)),
+            list(tabs.CourseTabList.iterate_displayable(self.course, self.settings)),
         )
 
     def test_get_tab_by_methods(self):
@@ -702,7 +703,7 @@ class DiscussionLinkTestCase(TabTestCase):
         self.assertEquals(
             (
                 discussion is not None and
-                discussion.can_display(self.course, self.settings, True, is_staff, is_enrolled) and
+                discussion.is_enabled(self.course, self.settings, True, is_staff, is_enrolled) and
                 (discussion.link_func(self.course, self._reverse(self.course)) == expected_discussion_link)
             ),
             expected_can_display_value
