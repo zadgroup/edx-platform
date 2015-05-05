@@ -13,8 +13,6 @@ from xmodule.modulestore.search import path_to_location, navigation_index
 
 from courseware.access import has_access
 
-UNNAMED_MODULE_NAME = _("(Unnamed)")
-
 
 class LmsSearchResultProcessor(SearchResultProcessor):
 

@@ -500,6 +500,39 @@ class TestCoursewareSearchIndexer(MixedWithOptionsTestCase):
         self.assertEqual(result["course_name"], "Search Index Test Course")
         self.assertEqual(result["location"], ["Week 1", "Lesson 1", "Subsection 1"])
 
+    def _test_course_location_null(self, store):
+        """ Test that course location information is added to index """
+        sequential2 = ItemFactory.create(
+            parent_location=self.chapter.location,
+            category='sequential',
+            display_name=None,
+            modulestore=store,
+            publish_item=True,
+            start=datetime(2015, 3, 1, tzinfo=UTC),
+        )
+        # add a new vertical
+        vertical2 = ItemFactory.create(
+            parent_location=sequential2.location,
+            category='vertical',
+            display_name='Subsection 2',
+            modulestore=store,
+            publish_item=True,
+        )
+        ItemFactory.create(
+            parent_location=vertical2.location,
+            category="html",
+            display_name="Find Me",
+            publish_item=True,
+            modulestore=store,
+        )
+        self.reindex_course(store)
+        response = self.search(query_string="Find Me")
+        self.assertEqual(response["total"], 1)
+
+        result = response["results"][0]["data"]
+        self.assertEqual(result["course_name"], "Search Index Test Course")
+        self.assertEqual(result["location"], ["Week 1", CoursewareSearchIndexer.UNNAMED_MODULE_NAME, "Subsection 2"])
+
     @patch('django.conf.settings.SEARCH_ENGINE', 'search.tests.utils.ErroringIndexEngine')
     def _test_exception(self, store):
         """ Test that exception within indexing yields a SearchIndexingError """
@@ -554,6 +587,10 @@ class TestCoursewareSearchIndexer(MixedWithOptionsTestCase):
     @ddt.data(*WORKS_WITH_STORES)
     def test_course_location_info(self, store_type):
         self._perform_test_using_store(store_type, self._test_course_location_info)
+
+    @ddt.data(*WORKS_WITH_STORES)
+    def test_course_location_null(self, store_type):
+        self._perform_test_using_store(store_type, self._test_course_location_null)
 
 
 @patch('django.conf.settings.SEARCH_ENGINE', 'search.tests.utils.ForceRefreshElasticSearchEngine')

@@ -293,6 +293,8 @@ class CoursewareSearchIndexer(SearchIndexerBase):
         'category': 'courseware_index'
     }
 
+    UNNAMED_MODULE_NAME = _("(Unnamed)")
+
     @classmethod
     def normalize_structure_key(cls, structure_key):
         """ Normalizes structure key for use in indexing """
@@ -330,7 +332,10 @@ class CoursewareSearchIndexer(SearchIndexerBase):
         location_path = []
         parent = item
         while parent is not None:
-            location_path.append(parent.display_name_with_default)
+            path_component_name = parent.display_name
+            if not path_component_name:
+                path_component_name = cls.UNNAMED_MODULE_NAME
+            location_path.append(path_component_name)
             parent = parent.get_parent()
         location_path.reverse()
         return {
