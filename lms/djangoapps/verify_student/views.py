@@ -901,6 +901,7 @@ def _compose_message_reverification_email(
             verification_open = current_date <= ver_block.due
         else:
             verification_open = True
+
         context["left_attempts"] = left_attempts
         context["is_attempt_allowed"] = is_attempt_allowed
         context["verification_open"] = verification_open

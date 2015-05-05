@@ -2054,10 +2054,13 @@ class TestEmailMessageWithCustomICRVBlock(ModuleStoreTestCase):
             self.course.id, self.user.id, "midterm", self.attempt, "approved", True
         )
 
-        self.assertIn("Your verification for course {course_name} and assessment {assessment} has been passed.".format(
+        self.assertIn(
+            "Your verification for course {course_name} and assessment {assessment} has been passed.".format(
             course_name=self.course.display_name_with_default,
             assessment=self.assessment
-        ), body)
+            ),
+            body
+        )
 
         self.assertIn("Re-verification Status", subject)
 
@@ -2086,10 +2089,13 @@ class TestEmailMessageWithCustomICRVBlock(ModuleStoreTestCase):
                 self.course.id, self.user.id, "midterm", self.attempt, "denied", True
             )
 
-            self.assertIn("Your verification for course {course_name} and assessment {assessment} has failed.".format(
+            self.assertIn(
+                "Your verification for course {course_name} and assessment {assessment} has failed.".format(
                 course_name=self.course.display_name_with_default,
                 assessment=self.assessment
-            ), body)
+                ),
+                body
+            )
 
             self.assertIn("Assessment date has passed and retake not allowed", body)
 
