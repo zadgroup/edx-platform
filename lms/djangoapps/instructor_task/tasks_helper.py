@@ -749,10 +749,9 @@ def upload_problem_grade_report(_xmodule_instance_args, _entry_id, course_id, _t
     enrolled_students = CourseEnrollment.users_enrolled_in(course_id)
     task_progress = TaskProgress(action_name, enrolled_students.count(), start_time)
 
-    # This struct encapsulates both the display names of each static item in
-    # the header row as values as well as the django User field names of those
-    # items as the keys.  It is structured in this way to keep the values
-    # related.
+    # This struct encapsulates both the display names of each static item in the
+    # header row as values as well as the django User field names of those items
+    # as the keys.  It is structured in this way to keep the values related.
     header_row = OrderedDict([('id', 'Student ID'), ('email', 'Email'), ('username', 'Username')])
 
     try:
@@ -764,10 +763,19 @@ def upload_problem_grade_report(_xmodule_instance_args, _entry_id, course_id, _t
 
     # Just generate the static fields for now.
     rows = [list(header_row.values()) + ['Final Grade'] + list(chain.from_iterable(problems.values()))]
+    error_rows = [list(header_row.values()) + ['error_msg']]
     current_step = {'step': 'Calculating Grades'}
 
     for student, gradeset, err_msg in iterate_grades_for(course_id, enrolled_students, keep_raw_scores=True):
         student_fields = [getattr(student, field_name) for field_name in header_row]
+        task_progress.attempted += 1
+
+        if err_msg:
+            # There was an error grading this student.
+            error_rows.append(student_fields + err_msg)
+            task_progress.failed += 1
+            continue
+
         final_grade = gradeset['percent']
         # Only consider graded problems
         problem_scores = {unicode(score.module_id): score for score in gradeset['raw_scores'] if score.graded}
@@ -785,7 +793,6 @@ def upload_problem_grade_report(_xmodule_instance_args, _entry_id, course_id, _t
                 earned_possible_values.append(['N/A', 'N/A'])
         rows.append(student_fields + [final_grade] + list(chain.from_iterable(earned_possible_values)))
 
-        task_progress.attempted += 1
         task_progress.succeeded += 1
         if task_progress.attempted % status_interval == 0:
             task_progress.update_task_state(extra_meta=current_step)
