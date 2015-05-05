@@ -10,6 +10,7 @@ from collections import namedtuple
 
 
 from pytz import UTC
+from django.utils import timezone
 from ipware.ip import get_ip
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -880,7 +881,7 @@ def _compose_message_reverification_email(course_key, user_id, relates_assessmen
         user_attempts = VerificationStatus.get_user_attempts(user_id, course_key, relates_assessment, location_id)
         left_attempts = allowed_attempts - user_attempts
         is_attempt_allowed = (allowed_attempts - user_attempts) > 0
-        current_date = datetime.datetime.now()
+        current_date = timezone.now()
         if ver_block.due:
             verification_open = current_date <= ver_block.due
         else:
