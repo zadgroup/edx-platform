@@ -304,7 +304,6 @@
 
             events: {
                 'click': 'startEditing',
-                'change select': 'finishEditing',
                 'focusout select': 'finishEditing'
             },
 
@@ -312,7 +311,7 @@
                 _.bindAll(this, 'render', 'optionForValue', 'fieldValue', 'displayValue', 'updateValueInField', 'saveValue');
                 this._super(options);
 
-                this.listenTo(this.model, "change:" + this.options.valueAttribute, this.updateValueInField);
+                this.listenTo(this.model, "focusout:" + this.options.valueAttribute, this.updateValueInField);
             },
 
             render: function () {
