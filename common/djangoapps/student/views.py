@@ -751,7 +751,6 @@ def _allow_donation(course_modes, course_id, enrollment):
     donations_enabled = DonationConfiguration.current().enabled
     return donations_enabled and enrollment.mode in course_modes[course_id] and course_modes[course_id][enrollment.mode].min_price == 0
 
-@csrf_exempt
 def try_change_enrollment(request):
     """
     This method calls change_enrollment if the necessary POST
@@ -790,6 +789,7 @@ def _update_email_opt_in(request, org):
 
 @require_POST
 @commit_on_success_with_read_committed
+@csrf_exempt
 def change_enrollment(request, check_access=True):
     """
     Modify the enrollment status for the logged-in user.
