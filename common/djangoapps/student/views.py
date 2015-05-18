@@ -751,7 +751,7 @@ def _allow_donation(course_modes, course_id, enrollment):
     donations_enabled = DonationConfiguration.current().enabled
     return donations_enabled and enrollment.mode in course_modes[course_id] and course_modes[course_id][enrollment.mode].min_price == 0
 
-
+@csrf_exempt
 def try_change_enrollment(request):
     """
     This method calls change_enrollment if the necessary POST
