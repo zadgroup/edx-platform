@@ -2,6 +2,7 @@
 Utility functions for validating forms
 """
 from django import forms
+from django.core.mail import EmailMultiAlternatives
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordResetForm
@@ -42,7 +43,8 @@ class PasswordResetFormNoActive(PasswordResetForm):
             self,
             domain_override=None,
             subject_template_name='registration/password_reset_subject.txt',
-            email_template_name='registration/password_reset_email.html',
+            email_template_name='registration/password_reset_email.txt',
+            email_template_html_name='registration/password_reset_email.html',
             use_https=False,
             token_generator=default_token_generator,
             from_email=settings.DEFAULT_FROM_EMAIL,
@@ -76,7 +78,11 @@ class PasswordResetFormNoActive(PasswordResetForm):
             # Email subject *must not* contain newlines
             subject = subject.replace('\n', '')
             email = loader.render_to_string(email_template_name, context)
-            send_mail(subject, email, from_email, [user.email])
+            email_html = loader.render_to_string(email_template_html_name, context)
+            msg = EmailMultiAlternatives(subject, email, from_email, [user.email])
+            msg.attach_alternative(email_html, "text/html")
+            msg.send()
+            #send_mail(subject, email, from_email, [user.email])
 
 
 class TrueField(forms.BooleanField):

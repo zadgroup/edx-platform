@@ -19,6 +19,7 @@ from django.contrib.auth.views import password_reset_confirm
 from django.contrib import messages
 from django.core.context_processors import csrf
 from django.core import mail
+from django.core.mail import EmailMultiAlternatives
 from django.core.urlresolvers import reverse
 from django.core.validators import validate_email, ValidationError
 from django.db import IntegrityError, transaction
@@ -1547,6 +1548,7 @@ def create_account_with_params(request, params):
     # Email subject *must not* contain newlines
     subject = ''.join(subject.splitlines())
     message = render_to_string('emails/activation_email.txt', context)
+    message_html = render_to_string('emails/activation_email.html', context)
 
     # Don't send email if we are:
     #
@@ -1576,7 +1578,10 @@ def create_account_with_params(request, params):
                            '-' * 80 + '\n\n' + message)
                 mail.send_mail(subject, message, from_address, [dest_addr], fail_silently=False)
             else:
-                user.email_user(subject, message, from_address)
+                msg = EmailMultiAlternatives(subject, message, from_address, [user.email])
+                msg.attach_alternative(message_html, "text/html")
+                msg.send()
+                #user.email_user(subject, message, from_address)
         except Exception:  # pylint: disable=broad-except
             log.error(u'Unable to send activation email to user from "%s"', from_address, exc_info=True)
     else:
@@ -1965,9 +1970,13 @@ def reactivation_email_for_user(user):
     subject = render_to_string('emails/activation_email_subject.txt', context)
     subject = ''.join(subject.splitlines())
     message = render_to_string('emails/activation_email.txt', context)
+    message_html = render_to_string('emails/activation_email.html', context)
 
     try:
-        user.email_user(subject, message, settings.DEFAULT_FROM_EMAIL)
+        msg = EmailMultiAlternatives(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+        msg.attach_alternative(message_html, "text/html")
+        msg.send()
+        #user.email_user(subject, message, settings.DEFAULT_FROM_EMAIL)
     except Exception:  # pylint: disable=broad-except
         log.error(u'Unable to send reactivation email from "%s"', settings.DEFAULT_FROM_EMAIL, exc_info=True)
         return JsonResponse({
