@@ -35,7 +35,7 @@
                             })
                         },
                         {
-                            view: new FieldViews.TextFieldView({
+                            view: new AccountSettingsFieldViews.FullNameFieldView({
                                 model: userAccountModel,
                                 title: gettext('Full Name'),
                                 valueAttribute: 'name',

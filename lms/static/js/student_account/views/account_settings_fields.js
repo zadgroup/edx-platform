@@ -6,6 +6,18 @@
 
         var AccountSettingsFieldViews = {};
 
+        AccountSettingsFieldViews.FullNameFieldView = FieldViews.TextFieldView.extend({
+            saveValue: function () {
+                if( ! /^\s*[\u0600-\u06FF]{2,}(\s+[\u0600-\u06FF]{2,}){2,}\s*$/.test(this.fieldValue())){
+                    return false
+                } else {
+                    var attributes = {};
+                    attributes[this.options.valueAttribute] = this.fieldValue();
+                    this.saveAttributes(attributes);
+                }
+            }
+        });
+
         AccountSettingsFieldViews.EmailFieldView = FieldViews.TextFieldView.extend({
 
             successMessage: function() {
@@ -55,7 +67,12 @@
 
             linkClicked: function (event) {
                 event.preventDefault();
-                this.resetPassword(event);
+                var c = confirm('سيتم إرسال رسالة إلى بريدك الالكتروني بعد الضغط على زر موافق');
+
+                if ( c ) {
+                    this.resetPassword(event);
+                }
+
             },
 
             resetPassword: function () {
