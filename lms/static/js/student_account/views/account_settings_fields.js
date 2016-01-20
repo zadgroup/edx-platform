@@ -17,10 +17,8 @@
                 }
             },
             errorMessage: function() {
-                return this.indicators.error + interpolate_text(
+                return this.indicators.error +
                             'يجب أن يحتوي فقط أحرف عربية، و أن يكون الاسم الثلاثي على الأقل'
-                );
-
             }
         });
 
