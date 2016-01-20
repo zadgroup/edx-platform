@@ -9,12 +9,18 @@
         AccountSettingsFieldViews.FullNameFieldView = FieldViews.TextFieldView.extend({
             saveValue: function () {
                 if( ! /^\s*[\u0600-\u06FF]{2,}(\s+[\u0600-\u06FF]{2,}){2,}\s*$/.test(this.fieldValue())){
-                    return false
+                    return this.showNotificationMessage(this.errorMessage());
                 } else {
                     var attributes = {};
                     attributes[this.options.valueAttribute] = this.fieldValue();
                     this.saveAttributes(attributes);
                 }
+            },
+            errorMessage: function() {
+                return this.indicators.error + interpolate_text(
+                            'يجب أن يحتوي فقط أحرف عربية، و أن يكون الاسم الثلاثي على الأقل'
+                );
+
             }
         });
 
